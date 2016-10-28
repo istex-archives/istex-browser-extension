@@ -1,0 +1,35 @@
+a[name="ISTEXLink"].istex-link {
+    margin:2px 5px 2px 5px;
+    padding: 2px;
+    width: 60px;
+    border: 1px solid;
+    border-top-color: #ccc;
+    border-left-color: #ccc;
+    border-bottom-color: #000;
+    border-right-color: #000;
+    background: #458ca5 !important;
+    text-align: center;
+    text-decoration: none !important;
+    font: normal 10px Verdana;
+    color: white !important;
+    font-weight: bold;
+/*    border-radius: 5px;*/
+}
+
+a[name="ISTEXLink"].istex-link:hover {
+    text-decoration: none !important;
+    color: white !important;
+    background: #C4D733 !important;
+    font-weight: bold;
+}
+
+a[name="ISTEXLink"].istex-link:active {
+    border-top-color: #000;
+    border-left-color: #000;
+    border-bottom-color: #ccc;
+    border-right-color: #ccc;
+    background: #666;
+    text-decoration: none !important;
+    color: white;
+    font-weight: bold;
+}
