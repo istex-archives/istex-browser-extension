@@ -1,8 +1,8 @@
 {
   "manifest_version": 2,
-  "name": "istex",
+  "name": "ISTEX",
   "version": "1.0",
-  "description": "Istex web extension.",
+  "description": "An add-on for identifying ISTEX resources in the browser pages",
   "icons": {
     "16": "icons/istex-16.png",
     "48": "icons/istex-48.png"
