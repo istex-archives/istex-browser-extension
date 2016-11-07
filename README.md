@@ -1,2 +1,2 @@
 # istex-web-extension
-Web extension adapation of istex-browser-addon
+Web extension adaptation of istex-browser-addon

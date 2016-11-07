@@ -1,40 +1,41 @@
-var istex = {
-  istexBaseURL: "api.istex.fr/document/openurl",
-  maxPageLinks: 2500,
-  mustDebug   : false,
+'use strict';
 
-  message: function(aMessage) {
-    if (this.mustDebug) {
-      console.log("istex.log: " + aMessage);
-    }
-  },
+var config,
+    ISTEXLinkInserter
+  ;
 
-  /**
-   * Check if the string str ends with given suffix.
-   */
-  endsWith: function(str, suffix) {
-    return str.indexOf(suffix, str.length - suffix.length) !== -1;
-  },
+function isObject (value) {
+  return value && "object" == typeof value || "function" == typeof value;
+}
 
-  /**
-   * Check if the string str starts with given prefix.
-   *
-   */
-  startsWith: function(str, prefix) {
-    return str.indexOf(prefix) === 0;
-  },
-
-  maxPageLinks: function() {
-    return this.maxPageLinks;
-  },
-
-  istexBaseURL: function() {
-    return this.istexBaseURL;
+function log (message) {
+  if (!console || !console.log) return;
+  if (isObject(message) && console.dir) {
+    console.dir(message);
+    return;
   }
 
+  console.log(message);
+}
+
+function warn (message) {
+  if (!console || !console.warn) return log(message);
+
+  console.warn(message);
+}
+function debug (message) {
+  if (config && config.mustDebug) {
+    warn("istex-web-extension: " + message);
+  }
+}
+
+config = {
+  istexBaseURL: "api.istex.fr/document/openurl",
+  maxPageLinks: 2500,
+  mustDebug   : false
 };
 
-var ISTEXLinkInserter = {
+ISTEXLinkInserter = {
   // OpenURL static info
   openUrlVersion: "Z39.88-2004",
   openURLPrefix : "https://api.istex.fr/document/openurl?",
@@ -71,7 +72,7 @@ var ISTEXLinkInserter = {
 
     var rootElement = document.documentElement;
     // check if we have an html page
-    istex.message(document.contentType);
+    debug(document.contentType);
     if (document.contentType && document.contentType == "text/html") {
       ISTEXLinkInserter.findAndReplaceLinks(rootElement);
       rootElement.addEventListener("DOMNodeInserted", ISTEXLinkInserter.onDOMNodeInserted, false);
@@ -102,46 +103,52 @@ var ISTEXLinkInserter = {
       return false;
     }
 
-    var childs = domNode.childNodes;
-    var i      = 0;
-    while (nod = childs[i]) {
-      if (nod.nodeType == 3) { // text node found, do the replacement
-        var text = nod.textContent;
+    var childNodes = domNode.childNodes,
+        i          = 0,
+        childNode
+      ;
+
+    while (childNode = childNodes[i]) {
+      if (childNode.nodeType == 3) { // text node found, do the replacement
+        var text = childNode.textContent;
         if (text) {
           var matchDOI  = text.match(this.regexDoiPatternConservative);
           var matchPMID = text.match(this.regexPMIDPattern);
           if (matchDOI || matchPMID) {
-            var lnk = document.createElement('span');
-            lnk.setAttribute('name', 'ISTEXInserted');
+            var spanElm = document.createElement('span');
+            spanElm.setAttribute('name', 'ISTEXInserted');
 
             if (matchDOI) {
-              lnk.innerHTML = text.replace(this.regexDoiPatternConservative,
-                                           "<a href=\"http://dx.doi.org/$1\" name=\"ISTEXInserted\">$1</a>");
-              text          = lnk.innerHTML;
+              spanElm.innerHTML = text.replace(this.regexDoiPatternConservative,
+                                               '<a href="http://dx.doi.org/$1" name="ISTEXInserted">$1</a>');
+              text              = spanElm.innerHTML;
             }
             if (matchPMID) {
-              lnk.innerHTML = text.replace(this.regexPMIDPattern,
-                                           "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$3\" name=\"ISTEXInserted\">PubMed ID $3</a>");
+              spanElm.innerHTML =
+                text
+                  .replace(this.regexPMIDPattern,
+                           '<a href="http://www.ncbi.nlm.nih.gov/pubmed/$3" name="ISTEXInserted">PubMed ID $3</a>'
+                  );
             }
-            domNode.replaceChild(lnk, nod);
-            nod    = lnk;
-            text   = lnk.innerHTML;
-            prefix = false;
+            domNode.replaceChild(spanElm, childNode);
+            childNode = spanElm;
+            text      = spanElm.innerHTML;
+            prefix    = false;
           }
           else {
             if (prefix && (text.match(this.regexSuffixPMIDPattern))) {
-              istex.message("regexSuffixPMIDPattern: " + text);
-              var lnk = document.createElement('span');
-              lnk.setAttribute('name', 'ISTEXInserted');
-              lnk.innerHTML = text.replace(this.regexSuffixPMIDPattern,
-                                           "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$1\" name=\"ISTEXInserted\">$1</a>");
-              domNode.replaceChild(lnk, nod);
-              nod    = lnk;
-              text   = lnk.innerHTML;
-              prefix = false;
+              debug("regexSuffixPMIDPattern: " + text);
+              var spanElm = document.createElement('span');
+              spanElm.setAttribute('name', 'ISTEXInserted');
+              spanElm.innerHTML = text.replace(this.regexSuffixPMIDPattern,
+                                               "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$1\" name=\"ISTEXInserted\">$1</a>");
+              domNode.replaceChild(spanElm, childNode);
+              childNode = spanElm;
+              text      = spanElm.innerHTML;
+              prefix    = false;
             }
             else if (text.match(this.regexPrefixPMIDPattern)) {
-              istex.message("regexPrefixPMIDPattern: " + text);
+              debug("regexPrefixPMIDPattern: " + text);
               prefix = true;
             }
             else if (text.length > 0) {
@@ -152,8 +159,8 @@ var ISTEXLinkInserter = {
           }
         }
       }
-      else if (nod.nodeType == 1) { // not a text mode but an element node, we look forward
-        prefix = this.scanForDoiAndPubmedStrings(nod, prefix);
+      else if (childNode.nodeType == 1) { // not a text node but an element node, we look forward
+        prefix = this.scanForDoiAndPubmedStrings(childNode, prefix);
       }
       i++;
     }
@@ -162,85 +169,81 @@ var ISTEXLinkInserter = {
 
   findAndReplaceLinks: function(domNode) {
     // Only process valid domNodes:
-    if (domNode == null || !domNode.getElementsByTagName) {
-      return;
-    }
+    if (!domNode || !domNode.getElementsByTagName) return;
 
     this.scanForDoiAndPubmedStrings(domNode, false);
 
     // Detect OpenURL, DOI or PII links not already handled in the code above and replace them with our custom links
     var links = domNode.getElementsByTagName('a');
 
-    if (links.length > istex.maxPageLinks()) {
-      if (document) {
-        document.title += " - Too many links for ISTEX analyser:" + links.length;
-      }
+    if (links.length > config.maxPageLinks) {
+      warn("Too many links for ISTEX analyser:" + links.length);
       return;
     }
 
     for (var i = 0; i < links.length; i++) {
-      var linkk = links[i];
-      var flags = this.analyzeLink(linkk);
+      var link  = links[i];
+      var flags = this.analyzeLink(link);
 
       if (flags == 0) {
         continue;
       }
 
-      var href = decodeURIComponent(linkk.getAttribute("href"));
+      var href = decodeURIComponent(link.getAttribute("href"));
 
       // We have found an open url link:
       if (flags == this.flags.HAS_OPEN_URL) {
         // OpenURl
-        this.createOpenUrlLink(href, linkk);
+        this.createOpenUrlLink(href, link);
       }
       else if (flags == this.flags.DOI_ADDRESS) {
         // doi
-        this.createDoiLink(href, linkk);
+        this.createDoiLink(href, link);
       }
       else if (flags == this.flags.GOOGLE_SCHOLAR_OPENURL) {
-        this.createGoogleScholarLink(href, linkk);
+        this.createGoogleScholarLink(href, link);
       }
       else if (flags == this.flags.PUBMED_ADDRESS) {
         // PubMed ID
-        this.createPubmedLink(href, linkk);
+        this.createPubmedLink(href, link);
       }
       else if (flags == this.flags.HAS_PII) {
         // Publisher Item Identifier
-        this.createPIILink(href, linkk);
+        this.createPIILink(href, link);
       }
     }
 
     this.createSpanBasedLinks(domNode);
   },
 
-  analyzeLink: function(linkk) {
+  analyzeLink: function(link) {
     // First check if we have to bother:
     var mask = 0;
 
-    if (linkk.getAttribute("href") == undefined) {
+    if (link.getAttribute("href") == undefined) {
       return mask;
     }
 
-    var href = linkk.getAttribute("href");
-    if (linkk.getAttribute("name") == 'ISTEXVisited') {
+    var href = link.getAttribute("href");
+    if (link.getAttribute("name") == 'ISTEXVisited') {
       return mask;
     }
-    if (linkk.getAttribute("classname") == 'istex-link') {
+    if (link.getAttribute("classname") == 'istex-link') {
       return mask;
     }
-    if (href.indexOf(istex.istexBaseURL()) != -1) {
+    if (href.indexOf(config.istexBaseURL) != -1) {
       return mask;
     }
 
     // check if we have a Google Scholar pre-OpenURL link (the link that will call the OpenURL)
-    var contentText = linkk.textContent;
+    var contentText = link.textContent;
     if (href.indexOf('scholar.google.') != -1 && (contentText === 'ISTEX [PDF]')) {
       mask = this.flags.GOOGLE_SCHOLAR_OPENURL;
       //return mask;
     } else if ((href.indexOf('dx.doi.org') != -1 ||
                 href.indexOf('doi.acm.org') != -1 ||
                 href.indexOf('dx.crossref.org') != -1)
-               && this.doiPattern.test(href)) {
+               && href.match(this.doiPattern)) {
       // Check if the href contains a DOI link
       mask = this.flags.DOI_ADDRESS;
     } else if (href.indexOf('ncbi.nlm.nih.gov') != -1 && this.pubmedPattern.test(href)) {
@@ -253,13 +256,13 @@ var ISTEXLinkInserter = {
       // Check if the href contains a supported reference to an open url link
       mask = this.flags.OPEN_URL_BASE;
     } else if (href.indexOf('serialssolutions.com') != -1 && this.openUrlPattern.test(href)) {
-      if (linkk.getAttribute("class") != 'documentLink') {
+      if (link.getAttribute("class") != 'documentLink') {
         mask = this.flags.OPEN_URL_BASE;
       }
     }
 
-    if (istex.mustDebug && mask > 0) {
-      istex.message("URL is " + href + "\n mask value: " + mask);
+    if (config.mustDebug && mask > 0) {
+      debug("URL is " + href + "\n mask value: " + mask);
     }
 
     return mask;
@@ -288,12 +291,12 @@ var ISTEXLinkInserter = {
     linkk.setAttribute('name', "ISTEXVisited");
   },
 
-  createPubmedLink: function(href, linkk) {
+  createPubmedLink: function(href, link) {
     var istexUrl = href.replace(this.pubmedPattern,
                                 "rft_id=info:pmid/$2&rft.genre=article,chapter,bookitem&svc.fulltext=yes");
     var newLink  = this.makeLink(istexUrl, false);
-    linkk.parentNode.insertBefore(newLink, linkk.nextSibling);
-    linkk.setAttribute('name', "ISTEXVisited");
+    link.parentNode.insertBefore(newLink, link.nextSibling);
+    link.setAttribute('name', "ISTEXVisited");
   },
 
   createPIILink: function(href, linkk) {
@@ -306,12 +309,12 @@ var ISTEXLinkInserter = {
     }
   },
 
-  createGoogleScholarLink: function(href, linkk) {
+  createGoogleScholarLink: function(href, link) {
     // we simply make the ISTEX button with the existing google scholar url (which will call the ISTEX OpenURL service)
-    linkk.textContent = "ISTEX";
-    linkk.name        = "ISTEXLink";
-    linkk.className   = "istex-link";
-    //linkk.setAttribute('name', "ISTEXVisited");
+    link.textContent = "ISTEX";
+    link.name        = "ISTEXLink";
+    link.className   = "istex-link";
+    //link.setAttribute('name', "ISTEXVisited");
   },
 
   // Wikipedia for instance is using COInS spans
@@ -340,7 +343,7 @@ var ISTEXLinkInserter = {
    * @param {Object} href
    */
   makeLink            : function(href) {
-    istex.message("making link: " + this.openURLPrefix + href + "&noredirect&sid=istex-browser-addon");
+    debug("making link: " + this.openURLPrefix + href + "&noredirect&sid=istex-browser-addon");
 
 
     var span = document.createElement('span');
@@ -393,12 +396,12 @@ var ISTEXLinkInserter = {
     }
     var sid = this.parseQuery(href).sid;
 
-    var oReq = new XMLHttpRequest();
-    oReq.addEventListener("load", function() {
-      ISTEXLinkInserter.imgLoadHandler(oReq, parent, sid);
+    var req = new XMLHttpRequest();
+    req.addEventListener("load", function() {
+      ISTEXLinkInserter.imgLoadHandler(req, parent, sid);
     });
-    oReq.open("GET", ISTEXLinkInserter.openURLPrefix + href + "&noredirect");
-    oReq.send();
+    req.open("GET", ISTEXLinkInserter.openURLPrefix + href + "&noredirect");
+    req.send();
   },
 
   /**
@@ -406,18 +409,16 @@ var ISTEXLinkInserter = {
    * (used for extracting sid value)
    */
   parseQuery: function(qstr) {
-//console.log(qstr)
     var query = {},
         a     = qstr.substring(1).split('&'),
         b,
         i
       ;
+
     for (i = 0; i < a.length; i++) {
       b = a[i].split('=');
-    //console.dir(b[1])
-
-        query[decodeURIComponent(b[0])]
-          = decodeURIComponent(b[1] || '');
+      query[decodeURIComponent(b[0])]
+        = decodeURIComponent(b[1] || '');
 
     }
 
