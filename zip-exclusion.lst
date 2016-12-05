@@ -1,7 +1,0 @@
-legacy*
-releases*
-zip-exclusion.lst
-*.git*
-*.idea*
-Makefile
-istex-web-extension.*

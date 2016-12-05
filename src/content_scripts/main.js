@@ -351,29 +351,38 @@ ISTEXLinkInserter = {
     return span;
   },
 
-  imgLoadHandler: function(req, parent, sid) {
-    if ((req.responseText.indexOf("404") == -1) && (req.responseText.indexOf("300") == -1)) {
-      // get the resource url
-      var json = JSON.parse(req.responseText);
-      if (json) {
-        var istexUrl = json.resourceUrl;
-        if (istexUrl) {
-          istexUrl = istexUrl.replace("/original", "/pdf") + '?sid=' + sid;
+  imgLoadHandler: function(xhr, parent, sid) {
+    var json,
+        istexUrl,
+        a
+      ;
 
-          // set the added link, this will avoid an extra call to the OpenURL API and fix the access url
-          var child         = document.createElement('a');
-          child.href        = istexUrl;
-          child.target      = "_blank";
-          child.alt         = "ISTEX";
-          child.name        = "ISTEXLink";
-          child.className   = "istex-link";
-          child.textContent = "ISTEX";
-          parent.appendChild(child);
-        }
-      }
-    }
-    else {
+    if (xhr.status !== 200) {
       parent.parentNode.removeChild(parent);
+      return debug('\nAjax response status ' + xhr.status);
+    }
+
+
+    // get the resource url
+    try {
+      json = JSON.parse(xhr.responseText);
+    } catch (e) {
+      debug(e);
+      return;
+    }
+
+    if (json && json.resourceUrl) {
+      istexUrl = json.resourceUrl.replace("/original", "/pdf") + '?sid=' + sid;
+
+      // set the added link, this will avoid an extra call to the OpenURL API and fix the access url
+      a             = document.createElement('a');
+      a.href        = istexUrl;
+      a.target      = "_blank";
+      a.alt         = "ISTEX";
+      a.name        = "ISTEXLink";
+      a.className   = "istex-link";
+      a.textContent = "ISTEX";
+      parent.appendChild(a);
     }
   },
 
@@ -394,14 +403,19 @@ ISTEXLinkInserter = {
         href = href.replace('sid=', 'sid=istex-browser-addon,');
       }
     }
-    var sid = this.parseQuery(href).sid;
+    var sid        = this.parseQuery(href).sid,
+        requestUrl = ISTEXLinkInserter.openURLPrefix + href + "&noredirect",
+        xhr        = new XMLHttpRequest()
+      ;
 
-    var req = new XMLHttpRequest();
-    req.addEventListener("load", function() {
-      ISTEXLinkInserter.imgLoadHandler(req, parent, sid);
-    });
-    req.open("GET", ISTEXLinkInserter.openURLPrefix + href + "&noredirect");
-    req.send();
+    xhr.onload  = function() {
+      ISTEXLinkInserter.imgLoadHandler(xhr, parent, sid);
+    };
+    xhr.onerror = function() {
+      warn('Ajax error');
+    };
+    xhr.open("GET", requestUrl);
+    xhr.send(null);
   },
 
   /**
@@ -409,16 +423,15 @@ ISTEXLinkInserter = {
    * (used for extracting sid value)
    */
   parseQuery: function(qstr) {
-    var query = {},
-        a     = qstr.substring(1).split('&'),
-        b,
-        i
+    var query  = {},
+        paires = qstr.substring(1).split('&'),
+        paire
       ;
 
-    for (i = 0; i < a.length; i++) {
-      b = a[i].split('=');
-      query[decodeURIComponent(b[0])]
-        = decodeURIComponent(b[1] || '');
+    for (var i = 0; i < paires.length; i++) {
+      paire = paires[i].split('=');
+      query[decodeURIComponent(paire[0])]
+            = decodeURIComponent(paire[1] || '');
 
     }
 
