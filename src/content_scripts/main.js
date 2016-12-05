@@ -314,6 +314,7 @@ ISTEXLinkInserter = {
     link.textContent = "ISTEX";
     link.name        = "ISTEXLink";
     link.className   = "istex-link";
+    link.target     = "_blank";
     //link.setAttribute('name', "ISTEXVisited");
   },
 
