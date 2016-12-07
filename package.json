@@ -1,0 +1,25 @@
+{
+  "name": "istex-web-extension",
+  "version": "1.0.0",
+  "description": "An add-on for identifying ISTEX resources in the browser pages",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "web-ext build -s ./src -a ./web-ext-artifacts",
+    "run": "web-ext run -s ./src -a ./web-ext-artifacts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/istex/istex-web-extension.git"
+  },
+  "keywords": [
+    "Istex",
+    "web-extension"
+  ],
+  "author": "Istex",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/istex/istex-web-extension/issues"
+  },
+  "homepage": "https://github.com/istex/istex-web-extension#readme"
+}
