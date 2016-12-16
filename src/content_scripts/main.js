@@ -1,33 +1,15 @@
 'use strict';
 
 var config,
-    ISTEXLinkInserter
+    ISTEXLinkInserter,
+    whiteList = [
+      'scholar.google.*',
+      '*.wikipedia.org',
+      'scholar.*.fr',
+      '*' // Until we get better whitelist
+    ]
   ;
 
-function isObject (value) {
-  return value && "object" == typeof value || "function" == typeof value;
-}
-
-function log (message) {
-  if (!console || !console.log) return;
-  if (isObject(message) && console.dir) {
-    console.dir(message);
-    return;
-  }
-
-  console.log(message);
-}
-
-function warn (message) {
-  if (!console || !console.warn) return log(message);
-
-  console.warn(message);
-}
-function debug (message) {
-  if (config && config.mustDebug) {
-    warn("istex-web-extension: " + message);
-  }
-}
 
 config = {
   istexBaseURL: "api.istex.fr/document/openurl",
@@ -69,7 +51,6 @@ ISTEXLinkInserter = {
   },
 
   onDOMContentLoaded: function(event) {
-
     var rootElement = document.documentElement;
     // check if we have an html page
     debug(document.contentType);
@@ -268,14 +249,14 @@ ISTEXLinkInserter = {
     return mask;
   },
 
-  createOpenUrlLink: function(href, linkk) {
+  createOpenUrlLink: function(href, link) {
     var matchInfo = this.openUrlPattern.exec(href);
     if (matchInfo == null) {
       return;
     } else {
       // the last group should be the parameters:
       var child = this.makeLink(matchInfo[matchInfo.length - 1]);
-      linkk.parentNode.replaceChild(child, linkk);
+      link.parentNode.replaceChild(child, link);
     }
   },
 
@@ -314,7 +295,7 @@ ISTEXLinkInserter = {
     link.textContent = "ISTEX";
     link.name        = "ISTEXLink";
     link.className   = "istex-link";
-    link.target     = "_blank";
+    link.target      = "_blank";
     //link.setAttribute('name', "ISTEXVisited");
   },
 
@@ -346,51 +327,31 @@ ISTEXLinkInserter = {
   makeLink            : function(href) {
     debug("making link: " + this.openURLPrefix + href + "&noredirect&sid=istex-browser-addon");
 
-
     var span = document.createElement('span');
     this.makeChild(href, document, span);
     return span;
   },
 
-  imgLoadHandler: function(xhr, parent, sid) {
-    var json,
-        istexUrl,
-        a
-      ;
+  createLink: function(resourceUrl, sid) {
+    // set the added link, this will avoid an extra call to the OpenURL API and fix the access url
+    var a         = document.createElement('a');
+    a.href        = resourceUrl.replace("/original", "/pdf") + '?sid=' + sid;
+    a.target      = "_blank";
+    a.alt         = "ISTEX";
+    a.name        = "ISTEXLink";
+    a.className   = "istex-link";
+    a.textContent = "ISTEX";
 
-    if (xhr.status !== 200) {
-      parent.parentNode.removeChild(parent);
-      return debug('\nAjax response status ' + xhr.status);
-    }
-
-
-    // get the resource url
-    try {
-      json = JSON.parse(xhr.responseText);
-    } catch (e) {
-      debug(e);
-      return;
-    }
-
-    if (json && json.resourceUrl) {
-      istexUrl = json.resourceUrl.replace("/original", "/pdf") + '?sid=' + sid;
-
-      // set the added link, this will avoid an extra call to the OpenURL API and fix the access url
-      a             = document.createElement('a');
-      a.href        = istexUrl;
-      a.target      = "_blank";
-      a.alt         = "ISTEX";
-      a.name        = "ISTEXLink";
-      a.className   = "istex-link";
-      a.textContent = "ISTEX";
-      parent.appendChild(a);
-    }
+    return a;
   },
 
   makeChild: function(href, document, parent) {
+    var key = LZString.compress(href),
+        resourceUrl
+      ;
 
     // insert the sid in the openurl for usage statistics reason
-    if (href.indexOf('sid=') === -1) {
+    if (!~href.indexOf('sid=')) {
       // sid is alone in the given openurl
       href += '&sid=istex-browser-addon';
     } else {
@@ -404,14 +365,41 @@ ISTEXLinkInserter = {
         href = href.replace('sid=', 'sid=istex-browser-addon,');
       }
     }
-    var sid        = this.parseQuery(href).sid,
-        requestUrl = ISTEXLinkInserter.openURLPrefix + href + "&noredirect",
+
+    var sid = this.parseQuery(href).sid
+      ;
+
+    if (resourceUrl = localStorage.getItem(key)) {
+      if (resourceUrl !== 'NA') {
+        parent
+          .appendChild(
+            ISTEXLinkInserter.createLink(resourceUrl, sid)
+          );
+      }
+      return;
+    }
+
+    var requestUrl = ISTEXLinkInserter.openURLPrefix + href + "&noredirect",
         xhr        = new XMLHttpRequest()
       ;
 
-    xhr.onload  = function() {
-      ISTEXLinkInserter.imgLoadHandler(xhr, parent, sid);
+    xhr.responseType = "json";
+    xhr.onload       = function() {
+      if (~[200, 300, 404].indexOf(xhr.status)) {
+        localStorage.setItemOrClear(key, xhr.response.resourceUrl || 'NA');
+      }
+
+      if (xhr.status !== 200) {
+        parent.parentNode.removeChild(parent);
+        return debug('\nAjax response status ' + xhr.status);
+      }
+
+      parent
+        .appendChild(
+          ISTEXLinkInserter.createLink(xhr.response.resourceUrl, sid)
+        );
     };
+
     xhr.onerror = function() {
       warn('Ajax error');
     };
@@ -442,4 +430,36 @@ ISTEXLinkInserter = {
 
 };
 
-ISTEXLinkInserter.onDOMContentLoaded();
+function escapeStringForRegex (str) {
+  return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+}
+
+
+var whiteListPatterns = whiteList.map(function(value, key) {
+      return new RegExp(
+        escapeStringForRegex(value).replace('\\*', '.*'),
+        'i'
+      );
+    })
+  ;
+
+
+$.ajax(
+  {
+    url    : 'https://api.istex.fr/properties',
+    success: function(data) {
+      if (data.corpus.lastUpdate > localStorage.getItem('last-refresh')) {
+        localStorage.refresh();
+      }
+    },
+    complete: function(){
+      for (var i = 0; i < whiteListPatterns.length; ++i) {
+        if (window.location.href.match(whiteListPatterns[i])) {
+          ISTEXLinkInserter.onDOMContentLoaded();
+          break;
+        }
+      }
+    }
+  }
+);
+
