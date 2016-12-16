@@ -218,7 +218,7 @@ ISTEXLinkInserter = {
 
     // check if we have a Google Scholar pre-OpenURL link (the link that will call the OpenURL)
     var contentText = link.textContent;
-    if (href.indexOf('scholar.google.') != -1 && (contentText === 'ISTEX [PDF]')) {
+    if (href.indexOf('scholar.google.') != -1 && (contentText === '[PDF] ISTEX')) {
       mask = this.flags.GOOGLE_SCHOLAR_OPENURL;
       //return mask;
     } else if ((href.indexOf('dx.doi.org') != -1 ||
