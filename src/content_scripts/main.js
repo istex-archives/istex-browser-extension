@@ -54,7 +54,7 @@ ISTEXLinkInserter = {
     var rootElement = document.documentElement;
     // check if we have an html page
     debug(document.contentType);
-    if (document.contentType && document.contentType == "text/html") {
+    if (document.contentType === "text/html") {
       ISTEXLinkInserter.findAndReplaceLinks(rootElement);
       rootElement.addEventListener("DOMNodeInserted", ISTEXLinkInserter.onDOMNodeInserted, false);
     }
@@ -255,38 +255,41 @@ ISTEXLinkInserter = {
       return;
     } else {
       // the last group should be the parameters:
-      var child = this.makeLink(matchInfo[matchInfo.length - 1]);
+      var child = this.buildButton(matchInfo[matchInfo.length - 1]);
       link.parentNode.replaceChild(child, link);
     }
   },
 
-  createDoiLink: function(href, linkk) {
+  createDoiLink: function(href, link) {
     var matchInfo = this.doiPattern.exec(href);
     if (matchInfo.length < this.doiGroup) {
       return;
     }
     var doiString = matchInfo[this.doiGroup];
     var istexUrl  = "rft_id=info:doi/" + doiString;
-    var newLink   = this.makeLink(istexUrl);
-    linkk.parentNode.insertBefore(newLink, linkk.nextSibling);
-    linkk.setAttribute('name', "ISTEXVisited");
-  },
-
-  createPubmedLink: function(href, link) {
-    var istexUrl = href.replace(this.pubmedPattern,
-                                "rft_id=info:pmid/$2&rft.genre=article,chapter,bookitem&svc.fulltext=yes");
-    var newLink  = this.makeLink(istexUrl, false);
+    var newLink   = this.buildButton(istexUrl);
     link.parentNode.insertBefore(newLink, link.nextSibling);
     link.setAttribute('name', "ISTEXVisited");
   },
 
-  createPIILink: function(href, linkk) {
+  createPubmedLink: function(href, link) {
+    var istexUrl =
+          href.replace(
+            this.pubmedPattern,
+            "rft_id=info:pmid/$2&rft.genre=article,chapter,bookitem&svc.fulltext=yes"
+          );
+    var newLink  = this.buildButton(istexUrl);
+    link.parentNode.insertBefore(newLink, link.nextSibling);
+    link.setAttribute('name', "ISTEXVisited");
+  },
+
+  createPIILink: function(href, link) {
     var matches = href.match(this.regexPIIPattern);
     if (matches && (matches.length > 0)) {
       var istexUrl = "rft_id=info:" + matches[0] + "&rft.genre=article,chapter,bookitem&svc.fulltext=yes";
-      var newLink  = this.makeLink(istexUrl, false);
-      linkk.parentNode.insertBefore(newLink, linkk.nextSibling);
-      linkk.setAttribute('name', "ISTEXVisited");
+      var newLink  = this.buildButton(istexUrl);
+      link.parentNode.insertBefore(newLink, link.nextSibling);
+      link.setAttribute('name', "ISTEXVisited");
     }
   },
 
@@ -313,7 +316,7 @@ ISTEXLinkInserter = {
 
       if ((name != 'ISTEXVisited') && (clazzes.match(/Z3988/i) != null)) {
         query += "&url_ver=" + ISTEXLinkInserter.openUrlVersion;
-        var child = this.makeLink(query);
+        var child = this.buildButton(query);
         span.appendChild(child);
         span.setAttribute('name', 'ISTEXVisited');
       }
@@ -324,7 +327,7 @@ ISTEXLinkInserter = {
    *
    * @param {Object} href
    */
-  makeLink            : function(href) {
+  buildButton         : function(href) {
     debug("making link: " + this.openURLPrefix + href + "&noredirect&sid=istex-browser-addon");
 
     var span = document.createElement('span');
@@ -370,41 +373,45 @@ ISTEXLinkInserter = {
       ;
 
     if (resourceUrl = localStorage.getItem(key)) {
-      if (resourceUrl !== 'NA') {
-        parent
-          .appendChild(
-            ISTEXLinkInserter.createLink(resourceUrl, sid)
-          );
-      }
-      return;
-    }
-
-    var requestUrl = ISTEXLinkInserter.openURLPrefix + href + "&noredirect",
-        xhr        = new XMLHttpRequest()
-      ;
-
-    xhr.responseType = "json";
-    xhr.onload       = function() {
-      if (~[200, 300, 404].indexOf(xhr.status)) {
-        localStorage.setItemOrClear(key, xhr.response.resourceUrl || 'NA');
-      }
-
-      if (xhr.status !== 200) {
-        parent.parentNode.removeChild(parent);
-        return debug('\nAjax response status ' + xhr.status);
+      if (resourceUrl === 'NA') {
+        parent = null;
+        return;
       }
 
       parent
         .appendChild(
-          ISTEXLinkInserter.createLink(xhr.response.resourceUrl, sid)
+          ISTEXLinkInserter.createLink(resourceUrl, sid)
         );
-    };
+      return;
+    }
 
-    xhr.onerror = function() {
-      warn('Ajax error');
-    };
-    xhr.open("GET", requestUrl);
-    xhr.send(null);
+    var requestUrl = ISTEXLinkInserter.openURLPrefix + href + "&noredirect"
+      ;
+
+    $.ajax(
+      {
+        url     : requestUrl,
+        timeout : 2000,
+        success : function(data) {
+          parent
+          && parent.appendChild(
+            ISTEXLinkInserter.createLink(data.resourceUrl, sid)
+          );
+        },
+        error   : function(jqXHR, textStatus, errorThrown) {
+          logXhrError(requestUrl, errorThrown);
+          // Todo fix the async behavior using callback style for element creation
+          parent && parent.parentNode && parent.parentNode.removeChild(parent);
+        },
+        complete: function(jqXHR, textStatus) {
+          if (~[200, 300, 404].indexOf(jqXHR.status)) {
+            localStorage.setItemOrClear(key, jqXHR.responseJSON.resourceUrl || 'NA');
+          }
+
+
+        }
+      }
+    );
   },
 
   /**
@@ -423,9 +430,7 @@ ISTEXLinkInserter = {
             = decodeURIComponent(paire[1] || '');
 
     }
-
     return query;
-
   }
 
 };
@@ -435,7 +440,7 @@ function escapeStringForRegex (str) {
 }
 
 
-var whiteListPatterns = whiteList.map(function(value, key) {
+var whiteListPatterns = whiteList.map(function(value) {
       return new RegExp(
         escapeStringForRegex(value).replace('\\*', '.*'),
         'i'
@@ -446,13 +451,17 @@ var whiteListPatterns = whiteList.map(function(value, key) {
 
 $.ajax(
   {
-    url    : 'https://api.istex.fr/properties',
-    success: function(data) {
+    url     : 'https://api.istex.fr/properties',
+    timeout : 1000,
+    success : function(data) {
       if (data.corpus.lastUpdate > localStorage.getItem('last-refresh')) {
         localStorage.refresh();
       }
     },
-    complete: function(){
+    error   : function(jqXHR, textStatus, errorThrown) {
+      error(textStatus, errorThrown);
+    },
+    complete: function() {
       for (var i = 0; i < whiteListPatterns.length; ++i) {
         if (window.location.href.match(whiteListPatterns[i])) {
           ISTEXLinkInserter.onDOMContentLoaded();
