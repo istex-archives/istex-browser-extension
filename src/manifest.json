@@ -16,6 +16,9 @@
   "permissions": [
     "<all_urls>"
   ],
+  "background": {
+    "scripts": ["background_script.js"]
+  },
   "content_scripts": [
     {
       "matches": [
@@ -30,6 +33,15 @@
       ],
       "css":[
         "content_scripts/main.css"
+      ]
+    },
+    {
+      "matches": [
+        "*://scholar.google.fr/*3094930661629783031*", "*://scholar.google.com/*3094930661629783031*"
+      ],
+      "js": [
+        "vendors/jquery-3.1.1.min.js",
+        "content_scripts/gs-pref.js"
       ]
     }
   ]
