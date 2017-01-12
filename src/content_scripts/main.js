@@ -47,7 +47,8 @@ ISTEXLinkInserter = {
     PUBMED_ADDRESS        : 3,
     HAS_OPEN_URL          : 4,
     HAS_PII               : 5,
-    GOOGLE_SCHOLAR_OPENURL: 6
+    GOOGLE_SCHOLAR_OPENURL: 6,
+    SCOPUS_DOI            : 7
   },
 
   onDOMContentLoaded: function(event) {
@@ -191,7 +192,11 @@ ISTEXLinkInserter = {
       else if (flags == this.flags.HAS_PII) {
         // Publisher Item Identifier
         this.createPIILink(href, link);
+      } else if (flags == this.flags.SCOPUS_DOI) {
+        // scopus external publisher link
+        this.createScopusLink(href, link);
       }
+
     }
 
     this.createSpanBasedLinks(domNode);
@@ -240,6 +245,17 @@ ISTEXLinkInserter = {
       if (link.getAttribute("class") != 'documentLink') {
         mask = this.flags.OPEN_URL_BASE;
       }
+    } 
+    // check scopus external publisher links
+    if ( (mask == 0) && (href.indexOf('www.scopus.com/redirect/linking.uri') != -1 ) ) {
+      var simpleHref = href.replace("https://www.scopus.com/redirect/linking.uri?targetURL=", "");
+      simpleHref = decodeURIComponent(simpleHref);
+      var ind = simpleHref.indexOf("&");
+      if (ind != -1)
+        simpleHref = simpleHref.substring(0,ind);
+      if (simpleHref.match(this.doiPattern)) {
+        mask = this.flags.SCOPUS_DOI;
+      }
     }
 
     if (config.mustDebug && mask > 0) {
@@ -268,6 +284,25 @@ ISTEXLinkInserter = {
     var doiString = matchInfo[this.doiGroup];
     var istexUrl  = "rft_id=info:doi/" + doiString;
     var newLink   = this.buildButton(istexUrl);
+    link.parentNode.insertBefore(newLink, link.nextSibling);
+    link.setAttribute('name', "ISTEXVisited");
+  },
+
+  createScopusLink: function(href, link) {
+    var simpleHref = href.replace("https://www.scopus.com/redirect/linking.uri?targetURL=", "");
+      simpleHref = decodeURIComponent(simpleHref);
+      var ind = simpleHref.indexOf("&");
+      if (ind != -1)
+        simpleHref = simpleHref.substring(0,ind);
+
+    var matchInfo = this.doiPattern.exec(simpleHref);
+    if (matchInfo.length < this.doiGroup) {
+      return;
+    }
+    var doiString = matchInfo[this.doiGroup];
+    var istexUrl  = "rft_id=info:doi/" + doiString;
+    var newLink   = this.buildButton(istexUrl);
+    newLink.setAttribute('style', 'visibility:visible;');
     link.parentNode.insertBefore(newLink, link.nextSibling);
     link.setAttribute('name', "ISTEXVisited");
   },
