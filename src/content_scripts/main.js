@@ -51,6 +51,8 @@ ISTEXLinkInserter = {
     SCOPUS_DOI            : 7
   },
 
+  scopusExternalLinkPrefix: "www.scopus.com/redirect/linking.uri?targetURL=",
+
   onDOMContentLoaded: function(event) {
     var rootElement = document.documentElement;
     // check if we have an html page
@@ -226,6 +228,16 @@ ISTEXLinkInserter = {
     if (href.indexOf('scholar.google.') != -1 && (contentText === '[PDF] ISTEX')) {
       mask = this.flags.GOOGLE_SCHOLAR_OPENURL;
       //return mask;
+    } else if (href.indexOf(this.scopusExternalLinkPrefix) != -1 ) {
+      // check scopus external publisher links
+      var simpleHref = href.replace("https://" + this.scopusExternalLinkPrefix, "");
+      simpleHref = decodeURIComponent(simpleHref);
+      var ind = simpleHref.indexOf("&");
+      if (ind != -1)
+        simpleHref = simpleHref.substring(0,ind);
+      if (simpleHref.match(this.doiPattern)) {
+        mask = this.flags.SCOPUS_DOI;
+      }
     } else if ((href.indexOf('dx.doi.org') != -1 ||
                 href.indexOf('doi.acm.org') != -1 ||
                 href.indexOf('dx.crossref.org') != -1)
@@ -246,17 +258,6 @@ ISTEXLinkInserter = {
         mask = this.flags.OPEN_URL_BASE;
       }
     } 
-    // check scopus external publisher links
-    if ( (mask == 0) && (href.indexOf('www.scopus.com/redirect/linking.uri') != -1 ) ) {
-      var simpleHref = href.replace("https://www.scopus.com/redirect/linking.uri?targetURL=", "");
-      simpleHref = decodeURIComponent(simpleHref);
-      var ind = simpleHref.indexOf("&");
-      if (ind != -1)
-        simpleHref = simpleHref.substring(0,ind);
-      if (simpleHref.match(this.doiPattern)) {
-        mask = this.flags.SCOPUS_DOI;
-      }
-    }
 
     if (config.mustDebug && mask > 0) {
       debug("URL is " + href + "\n mask value: " + mask);
@@ -289,7 +290,7 @@ ISTEXLinkInserter = {
   },
 
   createScopusLink: function(href, link) {
-    var simpleHref = href.replace("https://www.scopus.com/redirect/linking.uri?targetURL=", "");
+    var simpleHref = href.replace("https://" + this.scopusExternalLinkPrefix, "");
       simpleHref = decodeURIComponent(simpleHref);
       var ind = simpleHref.indexOf("&");
       if (ind != -1)
