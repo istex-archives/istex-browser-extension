@@ -58,8 +58,11 @@ ISTEXLinkInserter = {
     // check if we have an html page
     debug(document.contentType);
     if (document.contentType === "text/html") {
-      ISTEXLinkInserter.findAndReplaceLinks(rootElement);
-      rootElement.addEventListener("DOMNodeInserted", ISTEXLinkInserter.onDOMNodeInserted, false);
+      var currentUrl = window.location.href;
+      if (currentUrl.indexOf('grobid') == -1) {
+        ISTEXLinkInserter.findAndReplaceLinks(rootElement);
+        rootElement.addEventListener("DOMNodeInserted", ISTEXLinkInserter.onDOMNodeInserted, false);
+      }
     }
 
   },
@@ -213,6 +216,7 @@ ISTEXLinkInserter = {
     }
 
     var href = link.getAttribute("href");
+    var currentUrl = window.location.href;
     if (link.getAttribute("name") == 'ISTEXVisited') {
       return mask;
     }
@@ -247,7 +251,7 @@ ISTEXLinkInserter = {
     } else if (href.indexOf('ncbi.nlm.nih.gov') != -1 && this.pubmedPattern.test(href)) {
       // Check if the href contains a PMID link
       mask = this.flags.PUBMED_ADDRESS;
-    } else if (this.regexPIIPattern.test(href)) {
+    } else if (this.regexPIIPattern.test(href) && currentUrl.indexOf('scholar.google.') == -1) {
       // Check if the href contains a PII link
       mask = this.flags.HAS_PII;
     } else if (href.indexOf('exlibrisgroup.com') != -1 && this.openUrlPattern.test(href)) {
