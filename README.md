@@ -36,5 +36,5 @@ Currently:
 
 If you just want to install the extension, follow one of these steps :
 
-  * __for Firefox__, just click one [the XPI file](https://github.com/istex/istex-web-extension/releases/download/v1.0.0/istex-1.0.0-an.fx.xpi), confirm authorization if needed, and click the "Install" button.
+  * __for Firefox__, just click one [the XPI file](https://github.com/istex/istex-web-extension/releases/download/v1.1.0/istex-1.1.0-an.fx.xpi), confirm authorization if needed, and click the "Install" button.
   * __for Chrome__, visit the [extension's homepage on the Chrome Web Store](https://chrome.google.com/webstore/detail/istex/fonjnfcanlbgnjgfhiocggldmpnhdhjg?hl=fr) and click on the "Add to Chrome" button
