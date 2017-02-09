@@ -1,3 +1,4 @@
+/* globals LZString, warn, error, debug, logXhrError */
 'use strict';
 
 var config,
@@ -12,32 +13,32 @@ var config,
 
 
 config = {
-  istexBaseURL: "api.istex.fr/document/openurl",
+  istexBaseURL: 'api.istex.fr/document/openurl',
   maxPageLinks: 2500,
   mustDebug   : false
 };
 
 ISTEXLinkInserter = {
   // OpenURL static info
-  openUrlVersion: "Z39.88-2004",
-  openURLPrefix : "https://api.istex.fr/document/openurl?",
+  openUrlVersion: 'Z39.88-2004',
+  openURLPrefix : 'https://api.istex.fr/document/openurl?',
 
   // DOI pattern
   doiPattern                 : /\/\/(dx\.doi\.org|doi\.acm\.org|dx\.crossref\.org).*\/(10\..*(\/|%2(F|f)).*)/,
   // the index of the group where to find the DOI
   doiGroup                   : 2,
-  regexDoiPatternConservative: new RegExp("(10\\.\\d{4,5}\\/[\\S]+[^;,.\\s])", "gi"),
+  regexDoiPatternConservative: new RegExp('(10\\.\\d{4,5}\\/[\\S]+[^;,.\\s])', 'gi'),
 
   // PMID
-  pubmedPattern         : new RegExp("\\/\\/.*\\.ncbi\\.nlm\\.nih\\.gov.*\\/pubmed.*(\\/|=)([0-9]{4,12})", "i"),
+  pubmedPattern         : new RegExp('\\/\\/.*\\.ncbi\\.nlm\\.nih\\.gov.*\\/pubmed.*(\\/|=)([0-9]{4,12})', 'i'),
   pubmedGroup           : 1,
-  regexPMIDPattern      : new RegExp("(PubMed\\s?(ID\\s?:?|:)|PM\\s?ID)[\\s:\\/]?\\s*([0-9]{4,12})", "gi"),
-  regexPrefixPMIDPattern: new RegExp("((PubMed\\s?(ID)?:?)|(PM\\s?ID))[\\s:\\/]*$", "i"),
-  regexSuffixPMIDPattern: new RegExp("^\\s*[:\\/]?\\s*([0-9]{4,12})", "i"),
-  skipPattern           : new RegExp("^[:\\/\\s]+$", "i"),
+  regexPMIDPattern      : new RegExp('(PubMed\\s?(ID\\s?:?|:)|PM\\s?ID)[\\s:\\/]?\\s*([0-9]{4,12})', 'gi'),
+  regexPrefixPMIDPattern: new RegExp('((PubMed\\s?(ID)?:?)|(PM\\s?ID))[\\s:\\/]*$', 'i'),
+  regexSuffixPMIDPattern: new RegExp('^\\s*[:\\/]?\\s*([0-9]{4,12})', 'i'),
+  skipPattern           : new RegExp('^[:\\/\\s]+$', 'i'),
 
   // PII pattern in links
-  regexPIIPattern: new RegExp("\\pii\\/([A-Z0-9]{16,20})", "gi"),
+  regexPIIPattern: new RegExp('\\pii\\/([A-Z0-9]{16,20})', 'gi'),
 
   // The last group should be the parameters for openurl resolver - TBD add EBSCO
   openUrlPattern: /.*(sfxhosted|sfx?|search|.hosted).(exlibrisgroup|serialssolutions).com.*(\/|%2(F|f))?\?*(.*)/,
@@ -51,17 +52,17 @@ ISTEXLinkInserter = {
     SCOPUS_DOI            : 7
   },
 
-  scopusExternalLinkPrefix: "www.scopus.com/redirect/linking.uri?targetURL=",
+  scopusExternalLinkPrefix: 'www.scopus.com/redirect/linking.uri?targetURL=',
 
-  onDOMContentLoaded: function(event) {
+  onDOMContentLoaded: function() {
     var rootElement = document.documentElement;
     // check if we have an html page
     debug(document.contentType);
-    if (document.contentType === "text/html") {
+    if (document.contentType === 'text/html') {
       var currentUrl = window.location.href;
-      if (currentUrl.indexOf('grobid') == -1) {
+      if (currentUrl.indexOf('grobid') === -1) {
         ISTEXLinkInserter.findAndReplaceLinks(rootElement);
-        rootElement.addEventListener("DOMNodeInserted", ISTEXLinkInserter.onDOMNodeInserted, false);
+        rootElement.addEventListener('DOMNodeInserted', ISTEXLinkInserter.onDOMNodeInserted, false);
       }
     }
 
@@ -75,34 +76,35 @@ ISTEXLinkInserter = {
   scanForDoiAndPubmedStrings: function(domNode, prefixStatus) {
     var prefix = prefixStatus;
     // Only process valid dom nodes:
-    if (domNode == null || !domNode.getElementsByTagName) {
+    if (domNode === null || !domNode.getElementsByTagName) {
       return prefix;
     }
 
 
     // if the node is already clickable
-    if ((domNode.tagName == 'a') || ((domNode.tagName == 'A'))) {
+    if ((domNode.tagName === 'a') || ((domNode.tagName === 'A'))) {
       return false;
     }
 
     // we do not process user input text area
-    if ((domNode.tagName == 'textarea') || (domNode.tagName == 'TEXTAREA')) {
+    if ((domNode.tagName === 'textarea') || (domNode.tagName === 'TEXTAREA')) {
       return false;
     }
 
     var childNodes = domNode.childNodes,
-        i          = 0,
-        childNode
+        childNode,
+        spanElm,
+        i          = 0
       ;
 
-    while (childNode = childNodes[i]) {
-      if (childNode.nodeType == 3) { // text node found, do the replacement
+    while ((childNode = childNodes[i])) {
+      if (childNode.nodeType === 3) { // text node found, do the replacement
         var text = childNode.textContent;
         if (text) {
           var matchDOI  = text.match(this.regexDoiPatternConservative);
           var matchPMID = text.match(this.regexPMIDPattern);
           if (matchDOI || matchPMID) {
-            var spanElm = document.createElement('span');
+            spanElm = document.createElement('span');
             spanElm.setAttribute('name', 'ISTEXInserted');
 
             if (matchDOI) {
@@ -124,18 +126,18 @@ ISTEXLinkInserter = {
           }
           else {
             if (prefix && (text.match(this.regexSuffixPMIDPattern))) {
-              debug("regexSuffixPMIDPattern: " + text);
-              var spanElm = document.createElement('span');
+              debug('regexSuffixPMIDPattern: ' + text);
+              spanElm = document.createElement('span');
               spanElm.setAttribute('name', 'ISTEXInserted');
               spanElm.innerHTML = text.replace(this.regexSuffixPMIDPattern,
-                                               "<a href=\"http://www.ncbi.nlm.nih.gov/pubmed/$1\" name=\"ISTEXInserted\">$1</a>");
+                                               '<a href=\'http://www.ncbi.nlm.nih.gov/pubmed/$1\' name=\'ISTEXInserted\'>$1</a>');
               domNode.replaceChild(spanElm, childNode);
               childNode = spanElm;
               text      = spanElm.innerHTML;
               prefix    = false;
             }
             else if (text.match(this.regexPrefixPMIDPattern)) {
-              debug("regexPrefixPMIDPattern: " + text);
+              debug('regexPrefixPMIDPattern: ' + text);
               prefix = true;
             }
             else if (text.length > 0) {
@@ -146,7 +148,7 @@ ISTEXLinkInserter = {
           }
         }
       }
-      else if (childNode.nodeType == 1) { // not a text node but an element node, we look forward
+      else if (childNode.nodeType === 1) { // not a text node but an element node, we look forward
         prefix = this.scanForDoiAndPubmedStrings(childNode, prefix);
       }
       i++;
@@ -164,7 +166,7 @@ ISTEXLinkInserter = {
     var links = domNode.getElementsByTagName('a');
 
     if (links.length > config.maxPageLinks) {
-      warn("Too many links for ISTEX analyser:" + links.length);
+      warn('Too many links for ISTEX analyser:' + links.length);
       return;
     }
 
@@ -172,32 +174,32 @@ ISTEXLinkInserter = {
       var link  = links[i];
       var flags = this.analyzeLink(link);
 
-      if (flags == 0) {
+      if (flags === 0) {
         continue;
       }
 
-      var href = decodeURIComponent(link.getAttribute("href"));
+      var href = decodeURIComponent(link.getAttribute('href'));
 
       // We have found an open url link:
-      if (flags == this.flags.HAS_OPEN_URL) {
+      if (flags === this.flags.HAS_OPEN_URL) {
         // OpenURl
         this.createOpenUrlLink(href, link);
       }
-      else if (flags == this.flags.DOI_ADDRESS) {
+      else if (flags === this.flags.DOI_ADDRESS) {
         // doi
         this.createDoiLink(href, link);
       }
-      else if (flags == this.flags.GOOGLE_SCHOLAR_OPENURL) {
+      else if (flags === this.flags.GOOGLE_SCHOLAR_OPENURL) {
         this.createGoogleScholarLink(href, link);
       }
-      else if (flags == this.flags.PUBMED_ADDRESS) {
+      else if (flags === this.flags.PUBMED_ADDRESS) {
         // PubMed ID
         this.createPubmedLink(href, link);
       }
-      else if (flags == this.flags.HAS_PII) {
+      else if (flags === this.flags.HAS_PII) {
         // Publisher Item Identifier
         this.createPIILink(href, link);
-      } else if (flags == this.flags.SCOPUS_DOI) {
+      } else if (flags === this.flags.SCOPUS_DOI) {
         // scopus external publisher link
         this.createScopusLink(href, link);
       }
@@ -211,60 +213,60 @@ ISTEXLinkInserter = {
     // First check if we have to bother:
     var mask = 0;
 
-    if (link.getAttribute("href") == undefined) {
+    if (!link.getAttribute('href')) {
       return mask;
     }
 
-    var href = link.getAttribute("href");
+    var href       = link.getAttribute('href');
     var currentUrl = window.location.href;
-    if (link.getAttribute("name") == 'ISTEXVisited') {
+    if (link.getAttribute('name') === 'ISTEXVisited') {
       return mask;
     }
-    if (link.getAttribute("classname") == 'istex-link') {
+    if (link.getAttribute('classname') === 'istex-link') {
       return mask;
     }
-    if (href.indexOf(config.istexBaseURL) != -1) {
+    if (href.indexOf(config.istexBaseURL) !== -1) {
       return mask;
     }
 
     // check if we have a Google Scholar pre-OpenURL link (the link that will call the OpenURL)
     var contentText = link.textContent;
-    if (href.indexOf('scholar.google.') != -1 && (contentText === '[PDF] ISTEX')) {
+    if (href.indexOf('scholar.google.') !== -1 && (contentText === '[PDF] ISTEX')) {
       mask = this.flags.GOOGLE_SCHOLAR_OPENURL;
       //return mask;
-    } else if (href.indexOf(this.scopusExternalLinkPrefix) != -1 ) {
+    } else if (href.indexOf(this.scopusExternalLinkPrefix) !== -1) {
       // check scopus external publisher links
-      var simpleHref = href.replace("https://" + this.scopusExternalLinkPrefix, "");
-      simpleHref = decodeURIComponent(simpleHref);
-      var ind = simpleHref.indexOf("&");
-      if (ind != -1)
-        simpleHref = simpleHref.substring(0,ind);
+      var simpleHref = href.replace('https://' + this.scopusExternalLinkPrefix, '');
+      simpleHref     = decodeURIComponent(simpleHref);
+      var ind        = simpleHref.indexOf('&');
+      if (ind !== -1)
+        simpleHref = simpleHref.substring(0, ind);
       if (simpleHref.match(this.doiPattern)) {
         mask = this.flags.SCOPUS_DOI;
       }
-    } else if ((href.indexOf('dx.doi.org') != -1 ||
-                href.indexOf('doi.acm.org') != -1 ||
-                href.indexOf('dx.crossref.org') != -1)
+    } else if ((href.indexOf('dx.doi.org') !== -1 ||
+                href.indexOf('doi.acm.org') !== -1 ||
+                href.indexOf('dx.crossref.org') !== -1)
                && href.match(this.doiPattern)) {
       // Check if the href contains a DOI link
       mask = this.flags.DOI_ADDRESS;
-    } else if (href.indexOf('ncbi.nlm.nih.gov') != -1 && this.pubmedPattern.test(href)) {
+    } else if (href.indexOf('ncbi.nlm.nih.gov') !== -1 && this.pubmedPattern.test(href)) {
       // Check if the href contains a PMID link
       mask = this.flags.PUBMED_ADDRESS;
-    } else if (this.regexPIIPattern.test(href) && currentUrl.indexOf('scholar.google.') == -1) {
+    } else if (this.regexPIIPattern.test(href) && currentUrl.indexOf('scholar.google.') === -1) {
       // Check if the href contains a PII link
       mask = this.flags.HAS_PII;
-    } else if (href.indexOf('exlibrisgroup.com') != -1 && this.openUrlPattern.test(href)) {
+    } else if (href.indexOf('exlibrisgroup.com') !== -1 && this.openUrlPattern.test(href)) {
       // Check if the href contains a supported reference to an open url link
       mask = this.flags.OPEN_URL_BASE;
-    } else if (href.indexOf('serialssolutions.com') != -1 && this.openUrlPattern.test(href)) {
-      if (link.getAttribute("class") != 'documentLink') {
+    } else if (href.indexOf('serialssolutions.com') !== -1 && this.openUrlPattern.test(href)) {
+      if (link.getAttribute('class') !== 'documentLink') {
         mask = this.flags.OPEN_URL_BASE;
       }
-    } 
+    }
 
     if (config.mustDebug && mask > 0) {
-      debug("URL is " + href + "\n mask value: " + mask);
+      debug('URL is ' + href + '\n mask value: ' + mask);
     }
 
     return mask;
@@ -272,13 +274,10 @@ ISTEXLinkInserter = {
 
   createOpenUrlLink: function(href, link) {
     var matchInfo = this.openUrlPattern.exec(href);
-    if (matchInfo == null) {
-      return;
-    } else {
-      // the last group should be the parameters:
-      var child = this.buildButton(matchInfo[matchInfo.length - 1]);
-      link.parentNode.replaceChild(child, link);
-    }
+    if (!matchInfo) return;
+    // the last group should be the parameters:
+    var child = this.buildButton(matchInfo[matchInfo.length - 1]);
+    link.parentNode.replaceChild(child, link);
   },
 
   createDoiLink: function(href, link) {
@@ -287,75 +286,75 @@ ISTEXLinkInserter = {
       return;
     }
     var doiString = matchInfo[this.doiGroup];
-    var istexUrl  = "rft_id=info:doi/" + doiString;
+    var istexUrl  = 'rft_id=info:doi/' + doiString;
     var newLink   = this.buildButton(istexUrl);
     link.parentNode.insertBefore(newLink, link.nextSibling);
-    link.setAttribute('name', "ISTEXVisited");
+    link.setAttribute('name', 'ISTEXVisited');
   },
 
   createScopusLink: function(href, link) {
-    var simpleHref = href.replace("https://" + this.scopusExternalLinkPrefix, "");
-      simpleHref = decodeURIComponent(simpleHref);
-      var ind = simpleHref.indexOf("&");
-      if (ind != -1)
-        simpleHref = simpleHref.substring(0,ind);
+    var simpleHref = href.replace('https://' + this.scopusExternalLinkPrefix, '');
+    simpleHref     = decodeURIComponent(simpleHref);
+    var ind        = simpleHref.indexOf('&');
+    if (ind !== -1)
+      simpleHref = simpleHref.substring(0, ind);
 
     var matchInfo = this.doiPattern.exec(simpleHref);
     if (matchInfo.length < this.doiGroup) {
       return;
     }
     var doiString = matchInfo[this.doiGroup];
-    var istexUrl  = "rft_id=info:doi/" + doiString;
+    var istexUrl  = 'rft_id=info:doi/' + doiString;
     var newLink   = this.buildButton(istexUrl);
     newLink.setAttribute('style', 'visibility:visible;');
     link.parentNode.insertBefore(newLink, link.nextSibling);
-    link.setAttribute('name', "ISTEXVisited");
+    link.setAttribute('name', 'ISTEXVisited');
   },
 
   createPubmedLink: function(href, link) {
     var istexUrl =
           href.replace(
             this.pubmedPattern,
-            "rft_id=info:pmid/$2&rft.genre=article,chapter,bookitem&svc.fulltext=yes"
+            'rft_id=info:pmid/$2&rft.genre=article,chapter,bookitem&svc.fulltext=yes'
           );
     var newLink  = this.buildButton(istexUrl);
     link.parentNode.insertBefore(newLink, link.nextSibling);
-    link.setAttribute('name', "ISTEXVisited");
+    link.setAttribute('name', 'ISTEXVisited');
   },
 
   createPIILink: function(href, link) {
     var matches = href.match(this.regexPIIPattern);
     if (matches && (matches.length > 0)) {
-      var istexUrl = "rft_id=info:" + matches[0] + "&rft.genre=article,chapter,bookitem&svc.fulltext=yes";
+      var istexUrl = 'rft_id=info:' + matches[0] + '&rft.genre=article,chapter,bookitem&svc.fulltext=yes';
       var newLink  = this.buildButton(istexUrl);
       link.parentNode.insertBefore(newLink, link.nextSibling);
-      link.setAttribute('name', "ISTEXVisited");
+      link.setAttribute('name', 'ISTEXVisited');
     }
   },
 
   createGoogleScholarLink: function(href, link) {
     // we simply make the ISTEX button with the existing google scholar url (which will call the ISTEX OpenURL service)
-    link.textContent = "ISTEX";
-    link.name        = "ISTEXLink";
-    link.className   = "istex-link";
-    link.target      = "_blank";
-    //link.setAttribute('name', "ISTEXVisited");
+    link.textContent = 'ISTEX';
+    link.name        = 'ISTEXLink';
+    link.className   = 'istex-link';
+    link.target      = '_blank';
+    //link.setAttribute('name', 'ISTEXVisited');
   },
 
   // Wikipedia for instance is using COInS spans
   createSpanBasedLinks: function(doc) {
     // Detect latent OpenURL SPANS and replace them with ISTEX links
-    var spans = doc.getElementsByTagName("span");
+    var spans = doc.getElementsByTagName('span');
     for (var i = 0, n = spans.length; i < n; i++) {
       var span  = spans[i];
-      var query = span.getAttribute("title");
+      var query = span.getAttribute('title');
 
       // /Z3988 means OpenURL
-      var clazzes = span.getAttribute("class") == null ? "" : span.getAttribute("class");
-      var name    = span.getAttribute('name') == null ? "" : span.getAttribute('name');
+      var clazzes = span.getAttribute('class') === null ? '' : span.getAttribute('class');
+      var name    = span.getAttribute('name') === null ? '' : span.getAttribute('name');
 
-      if ((name != 'ISTEXVisited') && (clazzes.match(/Z3988/i) != null)) {
-        query += "&url_ver=" + ISTEXLinkInserter.openUrlVersion;
+      if ((name !== 'ISTEXVisited') && (clazzes.match(/Z3988/i) !== null)) {
+        query += '&url_ver=' + ISTEXLinkInserter.openUrlVersion;
         var child = this.buildButton(query);
         span.appendChild(child);
         span.setAttribute('name', 'ISTEXVisited');
@@ -368,7 +367,7 @@ ISTEXLinkInserter = {
    * @param {Object} href
    */
   buildButton         : function(href) {
-    debug("making link: " + this.openURLPrefix + href + "&noredirect&sid=istex-browser-addon");
+    debug('making link: ' + this.openURLPrefix + href + '&noredirect&sid=istex-browser-addon');
 
     var span = document.createElement('span');
     this.makeChild(href, document, span);
@@ -378,12 +377,12 @@ ISTEXLinkInserter = {
   createLink: function(resourceUrl, sid) {
     // set the added link, this will avoid an extra call to the OpenURL API and fix the access url
     var a         = document.createElement('a');
-    a.href        = resourceUrl.replace("/original", "/pdf") + '?sid=' + sid;
-    a.target      = "_blank";
-    a.alt         = "ISTEX";
-    a.name        = "ISTEXLink";
-    a.className   = "istex-link";
-    a.textContent = "ISTEX";
+    a.href        = resourceUrl.replace('/original', '/pdf') + '?sid=' + sid;
+    a.target      = '_blank';
+    a.alt         = 'ISTEX';
+    a.name        = 'ISTEXLink';
+    a.className   = 'istex-link';
+    a.textContent = 'ISTEX';
 
     return a;
   },
@@ -412,7 +411,7 @@ ISTEXLinkInserter = {
     var sid = this.parseQuery(href).sid
       ;
 
-    if (resourceUrl = localStorage.getItem(key)) {
+    if ((resourceUrl = localStorage.getItem(key))) {
       if (resourceUrl === 'NA') {
         parent = null;
         return;
@@ -425,7 +424,7 @@ ISTEXLinkInserter = {
       return;
     }
 
-    var requestUrl = ISTEXLinkInserter.openURLPrefix + href + "&noredirect"
+    var requestUrl = ISTEXLinkInserter.openURLPrefix + href + '&noredirect'
       ;
 
     $.ajax(
@@ -443,7 +442,7 @@ ISTEXLinkInserter = {
           // Todo fix the async behavior using callback style for element creation
           parent && parent.parentNode && parent.parentNode.removeChild(parent);
         },
-        complete: function(jqXHR, textStatus) {
+        complete: function(jqXHR) {
           if (~[200, 300, 404].indexOf(jqXHR.status)) {
             localStorage.setItemOrClear(key, jqXHR.responseJSON.resourceUrl || 'NA');
           }
@@ -487,7 +486,6 @@ var whiteListPatterns = whiteList.map(function(value) {
       );
     })
   ;
-
 
 $.ajax(
   {

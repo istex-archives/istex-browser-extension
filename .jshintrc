@@ -1,0 +1,15 @@
+{
+  "laxbreak": true,
+  "eqeqeq": true,
+  "expr": true,
+  "quotmark": true,
+  "indent": 2,
+  "undef": true,
+  "unused": true,
+  "strict": true,
+  "shadow": "outer",
+  "esnext": true,
+  "validthis": true,
+  "node": true,
+  "no-cond-assign": false
+}

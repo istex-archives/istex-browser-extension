@@ -21,5 +21,7 @@
   "bugs": {
     "url": "https://github.com/istex/istex-web-extension/issues"
   },
-  "homepage": "https://github.com/istex/istex-web-extension#readme"
+  "homepage": "https://github.com/istex/istex-web-extension#readme",
+  "dependencies": {
+  }
 }

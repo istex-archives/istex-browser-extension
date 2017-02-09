@@ -26,7 +26,7 @@
     Storage.prototype.refresh = function() {
       this.clear();
       this.setItem(LAST_REFRESH, Date.now());
-    }
+    };
   }
 
 
@@ -53,7 +53,7 @@
       while (i < 7500) {
         try {
           localStorage.setItem(i,
-                               "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec mollis neque felis, in efficitur tortor vestibulum id. Sed vitae lectus volutpat, vehicula quam id, condimentum lorem. Maecenas nec mauris eu risus posuere ultricies. Integer in ultrices sem. In tincidunt bibendum maximus. Proin consectetur elit orci, maximus suscipit mi finibus eu. Morbi aliquet urna eu diam mollis elementum. Maecenas tempor ultricies elit ac lacinia. Suspendisse pharetra eros suscipit vehicula pretium. Ut id iaculis nisi. In cursus felis ac dui malesuada malesuada. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce interdum, ante sit amet rhoncus commodo, turpis felis elementum ante, et viverra erat augue at urna. Vestibulum in tincidunt erat, vitae porta odio. Mauris commodo id diam vel vehicula.");
+                               'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec mollis neque felis, in efficitur tortor vestibulum id. Sed vitae lectus volutpat, vehicula quam id, condimentum lorem. Maecenas nec mauris eu risus posuere ultricies. Integer in ultrices sem. In tincidunt bibendum maximus. Proin consectetur elit orci, maximus suscipit mi finibus eu. Morbi aliquet urna eu diam mollis elementum. Maecenas tempor ultricies elit ac lacinia. Suspendisse pharetra eros suscipit vehicula pretium. Ut id iaculis nisi. In cursus felis ac dui malesuada malesuada. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Fusce interdum, ante sit amet rhoncus commodo, turpis felis elementum ante, et viverra erat augue at urna. Vestibulum in tincidunt erat, vitae porta odio. Mauris commodo id diam vel vehicula.');
         }
         catch (e) {
           throw e;
