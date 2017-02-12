@@ -8,7 +8,7 @@ function log (message) {
   }
   console.log.apply(null, arguments);
 }
- 
+
 function trace (message) {
   log.apply(null, arguments);
 
@@ -20,24 +20,30 @@ function trace (message) {
   }
 }
 
+function info () {
+  var args = Array.prototype.slice.call(arguments);
+  args.unshift('%c %s', 'color:#337ab7');
+  console.info.apply(null, args);
+}
+
 function warn (message) {
   if (!console || !console.warn) return log(message);
   console.warn.apply(null, arguments);
 }
 
-function error() {
-  if(!(config && config.mustDebug)) return;
+function error () {
+  if (!(config && config.mustDebug)) return;
   if (!console || !console.error) return log.apply(null, arguments);
   console.error.apply(null, arguments);
 }
 
 function debug (message) {
-  if(!(config && config.mustDebug)) return;
-    warn('istex-web-extension: ' + message);
+  if (!(config && config.mustDebug)) return;
+  warn('istex-web-extension: ' + message);
 }
 
-function logXhrError(url, statusText){
-  console.error('%c %s %c %s', 'color: #51515d;', url,'color:red;font-weight:bold;',  statusText);
+function logXhrError (url, statusText) {
+  console.error('%c %s %c %s', 'color: #51515d;', url, 'color:red;font-weight:bold;', statusText);
 }
 function isObject (value) {
   return value && 'object' === typeof value || 'function' === typeof value;

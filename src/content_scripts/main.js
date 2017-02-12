@@ -408,8 +408,7 @@ ISTEXLinkInserter = {
       }
     }
 
-    var sid = this.parseQuery(href).sid
-      ;
+    var sid = this.parseQuery(href).sid;
 
     if ((resourceUrl = localStorage.getItem(key))) {
       if (resourceUrl === 'NA') {
@@ -430,7 +429,9 @@ ISTEXLinkInserter = {
     $.ajax(
       {
         url     : requestUrl,
-        timeout : 2000,
+        timeout : 8000,
+        tryCount: 0,
+        maxRetry: 1,
         success : function(data) {
           parent
           && parent.appendChild(
@@ -439,6 +440,14 @@ ISTEXLinkInserter = {
         },
         error   : function(jqXHR, textStatus, errorThrown) {
           logXhrError(requestUrl, errorThrown);
+          if (
+            textStatus === 'timeout'
+            && this.tryCount < this.maxRetry
+          ) {
+            info('Retry: ', this.url);
+            this.tryCount++;
+            return $.ajax(this);
+          }
           // Todo fix the async behavior using callback style for element creation
           parent && parent.parentNode && parent.parentNode.removeChild(parent);
         },
@@ -462,12 +471,14 @@ ISTEXLinkInserter = {
         paires = qstr.substring(1).split('&'),
         paire
       ;
-
     for (var i = 0; i < paires.length; i++) {
       paire = paires[i].split('=');
-      query[decodeURIComponent(paire[0])]
-            = decodeURIComponent(paire[1] || '');
-
+      try {
+        query[decodeURIComponent(paire[0])]
+          = decodeURIComponent(paire[1] || '');
+      } catch (err) {
+        error(err);
+      }
     }
     return query;
   }
@@ -490,7 +501,9 @@ var whiteListPatterns = whiteList.map(function(value) {
 $.ajax(
   {
     url     : 'https://api.istex.fr/properties',
-    timeout : 1000,
+    timeout : 3000,
+    tryCount: 0,
+    maxRetry: 1,
     success : function(data) {
       if (data.corpus.lastUpdate > localStorage.getItem('last-refresh')) {
         localStorage.refresh();
@@ -498,8 +511,17 @@ $.ajax(
     },
     error   : function(jqXHR, textStatus, errorThrown) {
       error(textStatus, errorThrown);
+      if (
+        textStatus === 'timeout'
+        && this.tryCount < this.maxRetry
+      ) {
+        info('Retry: ', this.url);
+        this.tryCount++;
+        return $.ajax(this);
+      }
     },
     complete: function() {
+      // Todo move this in background script
       for (var i = 0; i < whiteListPatterns.length; ++i) {
         if (window.location.href.match(whiteListPatterns[i])) {
           ISTEXLinkInserter.onDOMContentLoaded();
