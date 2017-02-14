@@ -2,13 +2,7 @@
 'use strict';
 
 var config,
-    ISTEXLinkInserter,
-    whiteList = [
-      'scholar.google.*',
-      '*.wikipedia.org',
-      'scholar.*.fr',
-      '*' // Until we get better whitelist
-    ]
+    ISTEXLinkInserter
   ;
 
 
@@ -429,7 +423,7 @@ ISTEXLinkInserter = {
     $.ajax(
       {
         url     : requestUrl,
-        timeout : 8000,
+        timeout : 16000,
         tryCount: 0,
         maxRetry: 1,
         success : function(data) {
@@ -485,50 +479,27 @@ ISTEXLinkInserter = {
 
 };
 
-function escapeStringForRegex (str) {
-  return str.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
-}
-
-
-var whiteListPatterns = whiteList.map(function(value) {
-      return new RegExp(
-        escapeStringForRegex(value).replace('\\*', '.*'),
-        'i'
-      );
-    })
-  ;
 
 $.ajax(
   {
     url     : 'https://api.istex.fr/properties',
-    timeout : 3000,
+    timeout : 5000,
     tryCount: 0,
     maxRetry: 1,
     success : function(data) {
       if (data.corpus.lastUpdate > localStorage.getItem('last-refresh')) {
         localStorage.refresh();
       }
+      ISTEXLinkInserter.onDOMContentLoaded();
     },
     error   : function(jqXHR, textStatus, errorThrown) {
       error(textStatus, errorThrown);
-      if (
-        textStatus === 'timeout'
-        && this.tryCount < this.maxRetry
-      ) {
+      if (textStatus === 'timeout' && this.tryCount < this.maxRetry) {
         info('Retry: ', this.url);
         this.tryCount++;
         return $.ajax(this);
       }
-    },
-    complete: function() {
-      // Todo move this in background script
-      for (var i = 0; i < whiteListPatterns.length; ++i) {
-        if (window.location.href.match(whiteListPatterns[i])) {
-          ISTEXLinkInserter.onDOMContentLoaded();
-          break;
-        }
-      }
+      ISTEXLinkInserter.onDOMContentLoaded();
     }
-  }
-);
+  });
 
