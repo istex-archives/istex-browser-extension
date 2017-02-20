@@ -16,6 +16,10 @@ function handleInstalled (details) {
                        //url: "https://scholar.google.fr/scholar_setprefs?sciifh=1&inststart=0&num=10&scis=no&scisf=4&instq=istex&inst=3094930661629783031&context=istex&save=#2"
                        url: "https://scholar.google.fr/scholar_setprefs?instq=istex&inst=3094930661629783031&ctxt=istex&save=#2"
                      });
+  chrome.tabs.create({
+                       //url: "https://scholar.google.fr/scholar_setprefs?sciifh=1&inststart=0&num=10&scis=no&scisf=4&instq=istex&inst=3094930661629783031&context=istex&save=#2"
+                       url: "https://scholar.google.com/scholar_setprefs?instq=istex&inst=3094930661629783031&ctxt=istex&save=#2"
+                     });
 
   // write Scopus cookie for using ISTEX OpenUrl
 }
