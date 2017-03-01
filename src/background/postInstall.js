@@ -1,4 +1,9 @@
 'use strict';
+
+// if mode is not 0, we are in installation and mode gives the number of tabs opened with plugin install, 
+// otherwise mode is 0 and nothing shall be closed automatically to avoid an ISTEX totalitarian behaviour
+var mode = 0;
+
 function handleInstalled (details) {
   console.log(details.reason);
 
@@ -12,6 +17,7 @@ function handleInstalled (details) {
     setTimeout(function() { chrome.tabs.update(currentTabId, {selected: true}); }, 400);
   });
 
+  mode = 2;
   chrome.tabs.create({
                        //url: "https://scholar.google.fr/scholar_setprefs?sciifh=1&inststart=0&num=10&scis=no&scisf=4&instq=istex&inst=3094930661629783031&context=istex&save=#2"
                        url: "https://scholar.google.fr/scholar_setprefs?instq=istex&inst=3094930661629783031&ctxt=istex&save=#2"
@@ -20,8 +26,6 @@ function handleInstalled (details) {
                        //url: "https://scholar.google.fr/scholar_setprefs?sciifh=1&inststart=0&num=10&scis=no&scisf=4&instq=istex&inst=3094930661629783031&context=istex&save=#2"
                        url: "https://scholar.google.com/scholar_setprefs?instq=istex&inst=3094930661629783031&ctxt=istex&save=#2"
                      });
-
-  // write Scopus cookie for using ISTEX OpenUrl
 }
 
 chrome.runtime.onInstalled.addListener(handleInstalled);
@@ -33,7 +37,10 @@ chrome.runtime.onMessage.addListener(
         //        "from the extension");
   		if (request.text === 'done') {
       		// close the sender tab
-      		chrome.tabs.remove(sender.tab.id);
+          if (mode > 0) {
+        		chrome.tabs.remove(sender.tab.id);
+            mode--;
+          }
     	}
 	});
 
