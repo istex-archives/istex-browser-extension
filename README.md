@@ -38,3 +38,18 @@ If you just want to install the extension, follow one of these steps :
 
   * __for Firefox__, just click one [the XPI file](https://github.com/istex/istex-web-extension/releases/download/v1.1.2/istex-1.1.2-an.fx.xpi), confirm authorization if needed, and click the "Install" button.
   * __for Chrome__, visit the [extension's homepage on the Chrome Web Store](https://chrome.google.com/webstore/detail/istex/fonjnfcanlbgnjgfhiocggldmpnhdhjg?hl=fr) and click on the "Add to Chrome" button
+
+## Developers
+
+How to build the xpi:
+```
+npm i
+npm run build
+```
+
+How to run the web extension in developer mode with firefox (you need to install firefox >= 49):
+```
+npm i
+npm run run
+``` 
+It will open firefox on this page https://en.wikipedia.org/wiki/Superfluid_helium-4 with the istex-web-extension loaded. 

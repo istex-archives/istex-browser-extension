@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "web-ext build -s ./src -a ./web-ext-artifacts",
-    "run": "web-ext run -s ./src -a ./web-ext-artifacts"
+    "run": "web-ext run -s ./src -a ./web-ext-artifacts --start-url https://en.wikipedia.org/wiki/Superfluid_helium-4"
   },
   "repository": {
     "type": "git",
@@ -22,6 +22,8 @@
     "url": "https://github.com/istex/istex-web-extension/issues"
   },
   "homepage": "https://github.com/istex/istex-web-extension#readme",
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
+    "web-ext": "^1.8.1"
   }
 }
