@@ -151,6 +151,8 @@ ISTEXLinkInserter = {
   },
 
   findAndReplaceLinks: function(domNode) {
+    var self = this;
+
     // Only process valid domNodes:
     if (!domNode || !domNode.getElementsByTagName) return;
 
@@ -164,43 +166,52 @@ ISTEXLinkInserter = {
       return;
     }
 
+    var q = async.queue(function(link, callback) {
+      var flags = self.analyzeLink(link);
+      if (flags === 0) return callback();
+
+      self.refreshLocalStorageCacheIfNeeded(function () {
+        var href = decodeURIComponent(link.getAttribute('href'));
+
+        // We have found an open url link:
+        if (flags === self.flags.HAS_OPEN_URL) {
+          // OpenURl
+          self.createOpenUrlLink(href, link);
+        }
+        else if (flags === self.flags.DOI_ADDRESS) {
+          // doi
+          self.createDoiLink(href, link);
+        }
+        else if (flags === self.flags.GOOGLE_SCHOLAR_OPENURL) {
+          self.createGoogleScholarLink(href, link);
+        }
+        else if (flags === self.flags.PUBMED_ADDRESS) {
+          // PubMed ID
+          self.createPubmedLink(href, link);
+        }
+        else if (flags === self.flags.HAS_PII) {
+          // Publisher Item Identifier
+          self.createPIILink(href, link);
+        } else if (flags === self.flags.SCOPUS_DOI) {
+          // scopus external publisher link
+          self.createScopusLink(href, link);
+        }
+
+        // the first ISTEX link has been found so the 
+        // local storage cache is now ready to speed up
+        // the link unqueuing
+        q.concurrency = 50;
+        callback();
+      });
+    }, 1); // at begining, start 1 link by one link
     for (var i = 0; i < links.length; i++) {
-      var link  = links[i];
-      var flags = this.analyzeLink(link);
-
-      if (flags === 0) {
-        continue;
-      }
-
-      var href = decodeURIComponent(link.getAttribute('href'));
-
-      // We have found an open url link:
-      if (flags === this.flags.HAS_OPEN_URL) {
-        // OpenURl
-        this.createOpenUrlLink(href, link);
-      }
-      else if (flags === this.flags.DOI_ADDRESS) {
-        // doi
-        this.createDoiLink(href, link);
-      }
-      else if (flags === this.flags.GOOGLE_SCHOLAR_OPENURL) {
-        this.createGoogleScholarLink(href, link);
-      }
-      else if (flags === this.flags.PUBMED_ADDRESS) {
-        // PubMed ID
-        this.createPubmedLink(href, link);
-      }
-      else if (flags === this.flags.HAS_PII) {
-        // Publisher Item Identifier
-        this.createPIILink(href, link);
-      } else if (flags === this.flags.SCOPUS_DOI) {
-        // scopus external publisher link
-        this.createScopusLink(href, link);
-      }
-
+      q.push(links[i]);
     }
+    q.drain = function() {
+      // all queued links have been handled
+      this.createSpanBasedLinks(domNode);
+    };
 
-    this.createSpanBasedLinks(domNode);
   },
 
   analyzeLink: function(link) {
@@ -475,31 +486,48 @@ ISTEXLinkInserter = {
       }
     }
     return query;
+  },
+
+  /**
+   * To check if the localstorage cache need
+   * to be refresh. No need to clear the local cache
+   * if the ISTEX API content did not change. We call
+   * the https://api.istex.fr/properties URL to know
+   * if there is new content or not.
+   */
+  refreshLocalStorageCacheIfNeeded: function (cb) {
+    if (this.istexNewContenteAlreadyChecked) return cb();
+    
+    $.ajax({
+      url     : 'https://api.istex.fr/properties',
+      timeout : 5000,
+      tryCount: 0,
+      maxRetry: 1,
+      success : function(data) {
+        if (data.corpus.lastUpdate > localStorage.getItem('last-refresh')) {
+          localStorage.refresh();
+        }
+        this.istexNewContenteAlreadyChecked = true;
+        return cb();
+      },
+      error   : function(jqXHR, textStatus, errorThrown) {
+        error(textStatus, errorThrown);
+        if (textStatus === 'timeout' && this.tryCount < this.maxRetry) {
+          info('Retry: ', this.url);
+          this.tryCount++;
+          return $.ajax(this);
+        }
+        this.istexNewContenteAlreadyChecked = true;
+        return cb();
+      }
+    });
   }
 
 };
 
-
-$.ajax(
-  {
-    url     : 'https://api.istex.fr/properties',
-    timeout : 5000,
-    tryCount: 0,
-    maxRetry: 1,
-    success : function(data) {
-      if (data.corpus.lastUpdate > localStorage.getItem('last-refresh')) {
-        localStorage.refresh();
-      }
-      ISTEXLinkInserter.onDOMContentLoaded();
-    },
-    error   : function(jqXHR, textStatus, errorThrown) {
-      error(textStatus, errorThrown);
-      if (textStatus === 'timeout' && this.tryCount < this.maxRetry) {
-        info('Retry: ', this.url);
-        this.tryCount++;
-        return $.ajax(this);
-      }
-      ISTEXLinkInserter.onDOMContentLoaded();
-    }
-  });
-
+// When the DOM is ready, tell it to the istex web extension
+// so it can start to detect DOI, PMID, PII and openurl stuff
+// in the current page.
+$(document).ready(function() {
+  ISTEXLinkInserter.onDOMContentLoaded();
+});
