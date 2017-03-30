@@ -34,6 +34,9 @@ ISTEXLinkInserter = {
   // PII pattern in links
   regexPIIPattern: new RegExp('\\pii\\/([A-Z0-9]{16,20})', 'gi'),
 
+  // ISTEX ARK
+  regexINISTARKPattern: new RegExp('ark:\\/67375\\/[0123456789BCDFGHJKLMNPQRSTVWXZ\-]{14}', 'gi'),
+
   // The last group should be the parameters for openurl resolver - TBD add EBSCO
   openUrlPattern: /.*(sfxhosted|sfx?|search|.hosted).(exlibrisgroup|serialssolutions).com.*(\/|%2(F|f))?\?*(.*)/,
   flags         : {
@@ -43,7 +46,8 @@ ISTEXLinkInserter = {
     HAS_OPEN_URL          : 4,
     HAS_PII               : 5,
     GOOGLE_SCHOLAR_OPENURL: 6,
-    SCOPUS_DOI            : 7
+    SCOPUS_DOI            : 7,
+    HAS_INIST_ARK         : 8
   },
 
   scopusExternalLinkPrefix: 'www.scopus.com/redirect/linking.uri?targetURL=',
@@ -193,7 +197,12 @@ ISTEXLinkInserter = {
       else if (flags === this.flags.HAS_PII) {
         // Publisher Item Identifier
         this.createPIILink(href, link);
-      } else if (flags === this.flags.SCOPUS_DOI) {
+
+      }
+      else if (flags === this.flags.HAS_INIST_ARK) {
+        this.createINISTARKLink(href, link);
+      }
+      else if (flags === this.flags.SCOPUS_DOI) {
         // scopus external publisher link
         this.createScopusLink(href, link);
       }
@@ -247,6 +256,9 @@ ISTEXLinkInserter = {
     } else if (href.indexOf('ncbi.nlm.nih.gov') !== -1 && this.pubmedPattern.test(href)) {
       // Check if the href contains a PMID link
       mask = this.flags.PUBMED_ADDRESS;
+    } else if (this.regexINISTARKPattern.test(href)) {
+      // Check if the href contains a INIST ARK (including ISTEX ARK)
+      mask = this.flags.HAS_INIST_ARK;
     } else if (this.regexPIIPattern.test(href) && currentUrl.indexOf('scholar.google.') === -1) {
       // Check if the href contains a PII link
       mask = this.flags.HAS_PII;
@@ -325,6 +337,14 @@ ISTEXLinkInserter = {
       link.setAttribute('name', 'ISTEXVisited');
     }
   },
+
+  createINISTARKLink: function(href, link) {
+    var matchInfo = this.regexINISTARKPattern.exec(href);
+    var istexUrl  = 'rft_id=info:' + matchInfo[0];
+    var newLink   = this.buildButton(istexUrl);
+    link.parentNode.insertBefore(newLink, link.nextSibling);
+    link.setAttribute('name', 'ISTEXVisited');
+  },  
 
   createGoogleScholarLink: function(href, link) {
     // we simply make the ISTEX button with the existing google scholar url (which will call the ISTEX OpenURL service)
