@@ -35,7 +35,7 @@ ISTEXLinkInserter = {
   regexPIIPattern: new RegExp('\\pii\\/([A-Z0-9]{16,20})', 'gi'),
 
   // ISTEX ARK
-  regexINISTARKPattern: new RegExp('ark:\\/67375\\/[0123456789BCDFGHJKLMNPQRSTVWXZ\-]{14}', 'gi'),
+  regexINISTARKPattern: /(ark:\/(67375|12345)\/[0123456789BCDFGHJKLMNPQRSTVWXZ\-]{14})/,
 
   // The last group should be the parameters for openurl resolver - TBD add EBSCO
   openUrlPattern: /.*(sfxhosted|sfx?|search|.hosted).(exlibrisgroup|serialssolutions).com.*(\/|%2(F|f))?\?*(.*)/,
@@ -101,7 +101,8 @@ ISTEXLinkInserter = {
         if (text) {
           var matchDOI  = text.match(this.regexDoiPatternConservative);
           var matchPMID = text.match(this.regexPMIDPattern);
-          if (matchDOI || matchPMID) {
+          var matchINISTARK = text.match(this.regexINISTARKPattern);
+          if (matchDOI || matchPMID || matchINISTARK) {
             spanElm = document.createElement('span');
             spanElm.setAttribute('name', 'ISTEXInserted');
 
@@ -115,6 +116,13 @@ ISTEXLinkInserter = {
                 text
                   .replace(this.regexPMIDPattern,
                            '<a href="http://www.ncbi.nlm.nih.gov/pubmed/$3" name="ISTEXInserted">PubMed ID $3</a>'
+                  );
+            }
+            if (matchINISTARK) {
+              spanElm.innerHTML =
+                text
+                  .replace(this.regexINISTARKPattern,
+                           '<a href="https://api.istex.fr/$1" name="ISTEXInserted">$1</a>'
                   );
             }
             domNode.replaceChild(spanElm, childNode);
@@ -339,7 +347,7 @@ ISTEXLinkInserter = {
   },
 
   createINISTARKLink: function(href, link) {
-    var matchInfo = this.regexINISTARKPattern.exec(href);
+    var matchInfo = href.match(this.regexINISTARKPattern);
     var istexUrl  = 'rft_id=info:' + matchInfo[0];
     var newLink   = this.buildButton(istexUrl);
     link.parentNode.insertBefore(newLink, link.nextSibling);
