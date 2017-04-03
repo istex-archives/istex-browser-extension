@@ -18,28 +18,28 @@
     "tabs"
   ],
   "background": {
-    "scripts": ["background/postInstall.js","background/tabBootstrap.js"]
+    "scripts": ["background/postInstall.js", "background/tabBootstrap.js"]
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content_scripts/tabBootstrap.js"
-      ],
-      "css":[
-        "content_scripts/main.css"
-      ]
-    },
-    {
-      "matches": [
-        "*://scholar.google.fr/*3094930661629783031*", "*://scholar.google.com/*3094930661629783031*"
-      ],
-      "js": [
-        "vendors/jquery-3.1.1.min.js",
-        "content_scripts/gs-pref.js"
-      ]
-    }
-  ]
+  "options_ui": {
+    "page": "options/options.html"
+  },
+  "content_scripts": [{
+    "matches": [
+      "<all_urls>"
+    ],
+    "js": [
+      "content_scripts/tabBootstrap.js"
+    ],
+    "css": [
+      "content_scripts/main.css"
+    ]
+  }, {
+    "matches": [
+      "*://scholar.google.fr/*3094930661629783031*", "*://scholar.google.com/*3094930661629783031*"
+    ],
+    "js": [
+      "vendors/jquery-3.1.1.min.js",
+      "content_scripts/gs-pref.js"
+    ]
+  }]
 }

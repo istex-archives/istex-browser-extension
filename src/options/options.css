@@ -1,0 +1,18 @@
+html,
+body {
+  font-size: 100%;
+}
+
+.accept {
+  background-color: green;
+  float: right;
+  margin-bottom: 10px;
+  margin-right: 5px;
+}
+
+.skip {
+  background-color: red;
+  float: right;
+  margin-bottom: 10px;
+  margin-right: 5px;
+}
