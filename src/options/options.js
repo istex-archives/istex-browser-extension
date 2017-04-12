@@ -11,7 +11,7 @@ document.addEventListener('click', (e) => {
   if (e.target.classList.contains('accept')) {
     console.log('Accepter');
 
-    //mode = 2;
+    mode = 2;
 
     chrome.tabs.query({ currentWindow: true, active: true }, function(optionTab) {
       optionsTabId = optionTab[0].id;
@@ -29,10 +29,13 @@ document.addEventListener('click', (e) => {
           //url: "https://scholar.google.fr/scholar_setprefs?sciifh=1&inststart=0&num=10&scis=no&scisf=4&instq=istex&inst=3094930661629783031&context=istex&save=#2"
           url: "https://scholar.google.fr/scholar_setprefs?instq=istex&inst=" + istexLibraryId + "&ctxt=istex&save=#2"
         });
+
         chrome.tabs.create({
           //url: "https://scholar.google.fr/scholar_setprefs?sciifh=1&inststart=0&num=10&scis=no&scisf=4&instq=istex&inst=3094930661629783031&context=istex&save=#2"
           url: "https://scholar.google.com/scholar_setprefs?instq=istex&inst=" + istexLibraryId + "&ctxt=istex&save=#2"
         });
+
+
       });
     });
   };
@@ -45,19 +48,35 @@ document.addEventListener('click', (e) => {
   };
 });
 
-chrome.runtime.onMessage.addListener(
-  function(request, sender) {
-    console.log(sender.tab ?
-      "from a content script:" + sender.tab.url :
-      "from the extension");
-    if (request.text === 'done') {
-      // close the sender tab
-      if (mode > 0) {
-        chrome.tabs.remove(sender.tab.id);
-        mode--;
-        // Installation finished, close the options page
-        if (mode === 0) chrome.tabs.remove(optionsTabId);
-      }
+var filter = {
+  url: [{
+    hostContains: "scholar.google" //,
+      // queryEquals: "hl=fr&as_sdt=0&inst=" + istexLibraryId
+  }]
+};
+
+var scholarTabsIds = [];
+
+var listener = function(details) {
+  // First time, we save
+  if (scholarTabsIds.indexOf(details.tabId) === -1) {
+    console.log('Complete ' + details.tabId);
+    chrome.tabs.executeScript(details.tabId, {
+      code: 'document.getElementsByName("save")[0].click();'
+    }, function(result) {
+      console.log('Script OK');
+      scholarTabsIds.push(details.tabId);
+    });
+  } else {
+    // Second time, we close
+    console.log('AfterSave ' + details.tabId);
+    chrome.tabs.remove(details.tabId);
+    mode--;
+    if (mode === 0) {
+      chrome.tabs.remove(optionsTabId);
+      chrome.webNavigation.onCompleted.removeListener(listener);
     }
   }
-);
+};
+
+chrome.webNavigation.onCompleted.addListener(listener, filter);
