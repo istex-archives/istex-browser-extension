@@ -73,8 +73,8 @@ var listener = function(details) {
     chrome.tabs.remove(details.tabId);
     mode--;
     if (mode === 0) {
-      chrome.tabs.remove(optionsTabId);
       chrome.webNavigation.onCompleted.removeListener(listener);
+      chrome.tabs.remove(optionsTabId);
     }
   }
 };
