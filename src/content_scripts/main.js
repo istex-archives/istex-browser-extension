@@ -18,7 +18,7 @@ ISTEXLinkInserter = {
   openURLPrefix : 'https://api.istex.fr/document/openurl?',
 
   // DOI pattern
-  doiPattern                 : /\/\/(doi\.org|dx\.doi\.org|doi\.acm\.org|dx\.crossref\.org).*\/(10\..*(\/|%2(F|f)).*)/,
+  doiPattern                 : /\/\/(doi\.org|doi\.acm\.org|dx\.crossref\.org).*\/(10\..*(\/|%2(F|f)).*)/,
   // the index of the group where to find the DOI
   doiGroup                   : 2,
   regexDoiPatternConservative: new RegExp('(10\\.\\d{4,5}\\/[\\S]+[^;,.\\s])', 'gi'),
@@ -239,7 +239,6 @@ ISTEXLinkInserter = {
         mask = this.flags.SCOPUS_DOI;
       }
     } else if ((href.indexOf('doi.org') !== -1 ||
-                href.indexOf('dx.doi.org') !== -1 ||
                 href.indexOf('doi.acm.org') !== -1 ||
                 href.indexOf('dx.crossref.org') !== -1)
                && href.match(this.doiPattern)) {
