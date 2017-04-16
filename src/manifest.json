@@ -38,6 +38,7 @@
       ],
       "js": [
         "vendors/jquery-3.1.1.min.js",
+        "vendors/async.min.js",
         "content_scripts/gs-pref.js"
       ]
     }
