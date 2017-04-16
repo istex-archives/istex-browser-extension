@@ -18,9 +18,9 @@ ISTEXLinkInserter = {
   openURLPrefix : 'https://api.istex.fr/document/openurl?',
 
   // DOI pattern
-  doiPattern                 : /\/\/(doi\.org|doi\.acm\.org|dx\.crossref\.org).*\/(10\..*(\/|%2(F|f)).*)/,
+  doiPattern                 : /\/\/((dx\.)?doi\.org|doi\.acm\.org|dx\.crossref\.org).*\/(10\..*(\/|%2(F|f)).*)/,
   // the index of the group where to find the DOI
-  doiGroup                   : 2,
+  doiGroup                   : 3,
   regexDoiPatternConservative: new RegExp('(10\\.\\d{4,5}\\/[\\S]+[^;,.\\s])', 'gi'),
 
   // PMID
