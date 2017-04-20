@@ -50,8 +50,7 @@ document.addEventListener('click', (e) => {
 
 var filter = {
   url: [{
-    hostContains: "scholar.google" //,
-      // queryEquals: "hl=fr&as_sdt=0&inst=" + istexLibraryId
+    hostContains: "scholar.google"
   }]
 };
 
