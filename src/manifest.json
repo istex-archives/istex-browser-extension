@@ -7,7 +7,7 @@
   },
   "manifest_version": 2,
   "name": "ISTEX",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "description": "An add-on for identifying ISTEX resources in the browser pages",
   "icons": {
     "16": "icons/istex-16.png",
@@ -15,31 +15,32 @@
   },
   "permissions": [
     "<all_urls>",
-    "tabs"
+    "tabs",
+    "webNavigation"
   ],
   "background": {
-    "scripts": ["background/postInstall.js","background/tabBootstrap.js"]
+    "scripts": ["background/postInstall.js", "background/tabBootstrap.js"]
   },
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": [
-        "content_scripts/tabBootstrap.js"
-      ],
-      "css":[
-        "content_scripts/main.css"
-      ]
-    },
-    {
-      "matches": [
-        "*://scholar.google.fr/*3094930661629783031*", "*://scholar.google.com/*3094930661629783031*"
-      ],
-      "js": [
-        "vendors/jquery-3.1.1.min.js",
-        "content_scripts/gs-pref.js"
-      ]
-    }
-  ]
+  "options_ui": {
+    "page": "options/options.html"
+  },
+  "content_scripts": [{
+    "matches": [
+      "<all_urls>"
+    ],
+    "js": [
+      "content_scripts/tabBootstrap.js"
+    ],
+    "css": [
+      "content_scripts/main.css"
+    ]
+  }, {
+    "matches": [
+      "*://scholar.google.fr/*3094930661629783031*", "*://scholar.google.com/*3094930661629783031*"
+    ],
+    "js": [
+      "vendors/jquery-3.1.1.min.js",
+      "content_scripts/gs-pref.js"
+    ]
+  }]
 }
