@@ -11,7 +11,7 @@
   "description": "An add-on for identifying ISTEX resources in the browser pages",
   "icons": {
     "16": "icons/istex-16.png",
-    "48": "icons/icon-48.png"
+    "48": "icons/istex-48.png"
   },
   "permissions": [
     "<all_urls>",
