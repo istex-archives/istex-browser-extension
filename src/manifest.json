@@ -39,7 +39,7 @@
       "*://scholar.google.fr/*3094930661629783031*", "*://scholar.google.com/*3094930661629783031*"
     ],
     "js": [
-      "vendors/jquery-3.1.1.min.js",
+      "vendors/jquery-3.2.1.js",
       "content_scripts/gs-pref.js"
     ]
   }]
