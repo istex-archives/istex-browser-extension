@@ -2,7 +2,8 @@
   "applications": {
     "gecko": {
       "id": "istexwebextensionforreal@inist.fr",
-      "strict_min_version": "49.0a2"
+      "strict_min_version": "49.0a2",
+      "update_url": "https://addons.istex.fr/download/updates.json"
     }
   },
   "manifest_version": 2,
