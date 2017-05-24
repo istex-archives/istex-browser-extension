@@ -3,15 +3,15 @@ var whiteList         = [
       'scholar.google.*',
       '*.wikipedia.org',
       'scholar.*.fr',
-      '*' // Until we get better whitelist
+      '*' // Until we get better and/or configurable whitelist
     ],
     whiteListPatterns = whiteList.map(compileUrlPattern)
-  ;
+;
 
 
 chrome.runtime.onConnect.addListener(function(port) {
   port.onMessage.addListener(function(page) {
-    if (page.contentType === 'application/xml'
+    if (!isContentTypeAllowed(page.contentType)
         || !isWhiteListed(port.sender.url)
     ) return;
 
@@ -22,6 +22,16 @@ chrome.runtime.onConnect.addListener(function(port) {
     chrome.tabs.executeScript(port.sender.tab.id, {file: '/content_scripts/main.js'});
   });
 });
+
+
+function isContentTypeAllowed (contentType) {
+  var forbidenContentTypes = [
+    'application/xml',
+    'text/xml'
+  ];
+
+  return !~forbidenContentTypes.indexOf(contentType);
+}
 
 function isWhiteListed (url) {
   for (var i = 0; i < whiteListPatterns.length; ++i) {
