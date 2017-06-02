@@ -2,9 +2,11 @@
 
 function handleInstalled(details) {
   console.log(details.reason);
-  chrome.tabs.create({
-    url: chrome.runtime.getURL('/options/options.html')
-  });
+  if (details.reason === 'install') {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL('/options/options.html')
+    });
+  }
 }
 
 chrome.runtime.onInstalled.addListener(handleInstalled);
