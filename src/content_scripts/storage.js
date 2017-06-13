@@ -1,19 +1,19 @@
 (function() {
   'use strict';
-  var LAST_REFRESH = 'last-refresh'
-    ;
+  var LAST_REFRESH = 'istex-last-refresh'
+  ;
 
   /**
    * nettoie Storage si la donnée la plus ancienne à plus d'un jour.
    * @returns null
    */
-  if (Storage && !Storage.prototype.refreshIfNeeded) {
+  if (!Storage.prototype.refreshIfNeeded) {
     Storage.prototype.refreshIfNeeded = function() {
       var
         DAY         = 86400000,
-        lastRefresh = this.getItem(LAST_REFRESH),
+        lastRefresh = this.getLastRefresh(),
         refreshTime = DAY
-        ;
+      ;
 
       if (!lastRefresh || +lastRefresh + refreshTime < Date.now()) {
         this.refresh();
@@ -21,11 +21,22 @@
     };
   }
 
+  if (!Storage.prototype.getLastRefresh) {
+    Storage.prototype.getLastRefresh = function() {
+      return this.getItem(LAST_REFRESH);
+    };
+  }
+
+  if (!Storage.prototype.setLastRefresh) {
+    Storage.prototype.setLastRefresh = function() {
+      return this.setItemOrClear(LAST_REFRESH, Date.now());
+    };
+  }
 
   if (!Storage.prototype.refresh) {
     Storage.prototype.refresh = function() {
       this.clear();
-      this.setItem(LAST_REFRESH, Date.now());
+      this.setLastRefresh();
     };
   }
 

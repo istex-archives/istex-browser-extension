@@ -2,8 +2,9 @@
 'use strict';
 
 var config,
-    ISTEXLinkInserter
-  ;
+    ISTEXLinkInserter,
+    NOT_AVAILABLE = 'NA'
+;
 
 
 config = {
@@ -89,7 +90,7 @@ ISTEXLinkInserter = {
         childNode,
         spanElm,
         i          = 0
-      ;
+    ;
 
     while ((childNode = childNodes[i])) {
       if (childNode.nodeType === 3) { // text node found, do the replacement
@@ -384,7 +385,7 @@ ISTEXLinkInserter = {
   makeChild: function(href, document, parent) {
     var key = LZString.compress(href),
         resourceUrl
-      ;
+    ;
 
     // insert the sid in the openurl for usage statistics reason
     if (!~href.indexOf('sid=')) {
@@ -405,7 +406,7 @@ ISTEXLinkInserter = {
     var sid = this.parseQuery(href).sid;
 
     if ((resourceUrl = localStorage.getItem(key))) {
-      if (resourceUrl === 'NA') {
+      if (resourceUrl === NOT_AVAILABLE) {
         parent = null;
         return;
       }
@@ -418,7 +419,7 @@ ISTEXLinkInserter = {
     }
 
     var requestUrl = ISTEXLinkInserter.openURLPrefix + href + '&noredirect'
-      ;
+    ;
 
     $.ajax(
       {
@@ -447,7 +448,10 @@ ISTEXLinkInserter = {
         },
         complete: function(jqXHR) {
           if (~[200, 300, 404].indexOf(jqXHR.status)) {
-            localStorage.setItemOrClear(key, jqXHR.responseJSON.resourceUrl || 'NA');
+            if (!localStorage.getLastRefresh()) {
+              localStorage.setLastRefresh();
+            }
+            localStorage.setItemOrClear(key, jqXHR.responseJSON.resourceUrl || NOT_AVAILABLE);
           }
 
 
@@ -464,7 +468,7 @@ ISTEXLinkInserter = {
     var query  = {},
         paires = qstr.substring(1).split('&'),
         paire
-      ;
+    ;
     for (var i = 0; i < paires.length; i++) {
       paire = paires[i].split('=');
       try {
@@ -479,27 +483,38 @@ ISTEXLinkInserter = {
 
 };
 
+// We need to remove trace of the old way refresh Timestamp
+if (localStorage.getItem('last-refesh')) {
+  localStorage.clear();
+}
 
-$.ajax(
-  {
-    url     : 'https://api.istex.fr/properties',
-    timeout : 5000,
-    tryCount: 0,
-    maxRetry: 1,
-    success : function(data) {
-      if (data.corpus.lastUpdate > localStorage.getItem('last-refresh')) {
-        localStorage.refresh();
+if (!localStorage.getLastRefresh()) {
+  setTimeout(ISTEXLinkInserter.onDOMContentLoaded, 0);
+} else {
+  info('Check data freshness');
+  $.ajax(
+    {
+      url     : 'https://api.istex.fr/properties',
+      timeout : 5000,
+      tryCount: 0,
+      maxRetry: 1,
+      success : function(data) {
+        if (data.corpus.lastUpdate > localStorage.getLastRefresh()) {
+          localStorage.refresh();
+        }
+        ISTEXLinkInserter.onDOMContentLoaded();
+      },
+      error   : function(jqXHR, textStatus, errorThrown) {
+        error(textStatus, errorThrown);
+        if (textStatus === 'timeout' && this.tryCount < this.maxRetry) {
+          info('Retry: ', this.url);
+          this.tryCount++;
+          return $.ajax(this);
+        }
+        ISTEXLinkInserter.onDOMContentLoaded();
       }
-      ISTEXLinkInserter.onDOMContentLoaded();
-    },
-    error   : function(jqXHR, textStatus, errorThrown) {
-      error(textStatus, errorThrown);
-      if (textStatus === 'timeout' && this.tryCount < this.maxRetry) {
-        info('Retry: ', this.url);
-        this.tryCount++;
-        return $.ajax(this);
-      }
-      ISTEXLinkInserter.onDOMContentLoaded();
-    }
-  });
+    });
+}
+
+
 

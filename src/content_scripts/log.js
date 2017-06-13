@@ -22,7 +22,7 @@ function trace (message) {
 
 function info () {
   var args = Array.prototype.slice.call(arguments);
-  args.unshift('%c %s', 'color:#337ab7');
+  args.unshift('%cistex-web-extension: %c%s', 'color:#337ab7;font-weight:bold;', 'color: #51515d;');
   console.info.apply(null, args);
 }
 
@@ -43,7 +43,12 @@ function debug (message) {
 }
 
 function logXhrError (url, statusText) {
-  console.error('%c %s %c %s', 'color: #51515d;', url, 'color:red;font-weight:bold;', statusText);
+  console.error('%cistex-web-extension:%c %s %c %s',
+                'color:red;font-weight:bold;',
+                'color: #51515d;',
+                url,
+                'color:red;font-weight:bold;',
+                statusText);
 }
 function isObject (value) {
   return value && 'object' === typeof value || 'function' === typeof value;
