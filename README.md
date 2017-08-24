@@ -6,7 +6,7 @@ This extension is an adaptation of [istex-browser-addon](https://github.com/iste
 
 At the present time, 2 versions are available : one for Mozilla Firefox, the other for Google Chrome.
 
-##Functionalities
+## Functionalities
 
 This add-on performs the following task:
 
