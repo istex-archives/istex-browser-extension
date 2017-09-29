@@ -5,7 +5,46 @@ var config,
     ISTEXLinkInserter,
     NOT_AVAILABLE = 'NA'
 ;
-
+const forbidenElements = ['applet',
+                          'area',
+                          'audio',
+                          'br',
+                          'canvas',
+                          'center',
+                          'embed',
+                          'frame',
+                          'frameset',
+                          'hr',
+                          'iframe',
+                          'img',
+                          'input',
+                          'keygen',
+                          'link',
+                          'map',
+                          'meta',
+                          'meter',
+                          'noframes',
+                          'noscript',
+                          'object',
+                          'optgroup',
+                          'option',
+                          'output',
+                          'param',
+                          'picture',
+                          'progress',
+                          'script',
+                          'select',
+                          'source',
+                          'textarea',
+                          'time',
+                          'track',
+                          'video',
+                          'wbr',
+                          'svg',
+                          'g',
+                          'path',
+                          'text',
+                          'rect'];
 
 config = {
   istexBaseURL: 'api.istex.fr/document/openurl',
@@ -75,26 +114,23 @@ ISTEXLinkInserter = {
       return prefix;
     }
 
+    if (forbidenElements.includes(domNode.tagName.toLowerCase())) return false;
 
     // if the node is already clickable
-    if ((domNode.tagName === 'a') || ((domNode.tagName === 'A'))) {
-      return false;
-    }
-
-    // we do not process user input text area
-    if ((domNode.tagName === 'textarea') || (domNode.tagName === 'TEXTAREA')) {
+    if (domNode.tagName.toLowerCase() === 'a') {
       return false;
     }
 
     var childNodes = domNode.childNodes,
         childNode,
         spanElm,
-        i          = 0
+        i          = 0,
+        text
     ;
 
     while ((childNode = childNodes[i])) {
       if (childNode.nodeType === 3) { // text node found, do the replacement
-        var text = childNode.textContent;
+        text = childNode.textContent;
         if (text) {
           var matchDOI  = text.match(this.regexDoiPatternConservative);
           var matchPMID = text.match(this.regexPMIDPattern);
@@ -285,6 +321,7 @@ ISTEXLinkInserter = {
     var newLink   = this.buildButton(istexUrl);
     link.parentNode.insertBefore(newLink, link.nextSibling);
     link.setAttribute('name', 'ISTEXVisited');
+    //this.filterElementDisplay(link);
   },
 
   createScopusLink: function(href, link) {
@@ -354,7 +391,25 @@ ISTEXLinkInserter = {
         span.appendChild(child);
         span.setAttribute('name', 'ISTEXVisited');
       }
+
+
     }
+    //[].slice.call(spans).forEach(this.filterElementDisplay.bind(this)); @Todo implement filter to prevent multiple button
+  },
+  filterElementDisplay: function(element) {
+    var elementOffset;
+    elementOffset = $(element).offset();
+    if (this.lastCreatedButton) {
+      var lastSpan = this.lastCreatedButton;
+      var x, y, dist;
+      x            = Math.abs(lastSpan.left - elementOffset.left);
+      y            = Math.abs(lastSpan.top - elementOffset.top);
+      dist         = Math.sqrt(Math.pow(Math.abs(x), 2) + Math.pow(Math.abs(y), 2));
+      if (dist < 100) {
+        element.remove();
+      }
+    }
+    this.lastCreatedButton = elementOffset;
   },
   /**
    * Make the ISTEX button.
@@ -410,7 +465,6 @@ ISTEXLinkInserter = {
         parent = null;
         return;
       }
-
       parent
         .appendChild(
           ISTEXLinkInserter.createLink(resourceUrl, sid)
