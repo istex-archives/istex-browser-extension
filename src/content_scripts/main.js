@@ -321,7 +321,6 @@ ISTEXLinkInserter = {
     var newLink   = this.buildButton(istexUrl);
     link.parentNode.insertBefore(newLink, link.nextSibling);
     link.setAttribute('name', 'ISTEXVisited');
-    //this.filterElementDisplay(link);
   },
 
   createScopusLink: function(href, link) {
@@ -394,22 +393,6 @@ ISTEXLinkInserter = {
 
 
     }
-    //[].slice.call(spans).forEach(this.filterElementDisplay.bind(this)); @Todo implement filter to prevent multiple button
-  },
-  filterElementDisplay: function(element) {
-    var elementOffset;
-    elementOffset = $(element).offset();
-    if (this.lastCreatedButton) {
-      var lastSpan = this.lastCreatedButton;
-      var x, y, dist;
-      x            = Math.abs(lastSpan.left - elementOffset.left);
-      y            = Math.abs(lastSpan.top - elementOffset.top);
-      dist         = Math.sqrt(Math.pow(Math.abs(x), 2) + Math.pow(Math.abs(y), 2));
-      if (dist < 100) {
-        element.remove();
-      }
-    }
-    this.lastCreatedButton = elementOffset;
   },
   /**
    * Make the ISTEX button.
