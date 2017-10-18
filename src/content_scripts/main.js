@@ -407,10 +407,10 @@ ISTEXLinkInserter = {
     return span;
   },
 
-  createLink: function(resourceUrl, sid) {
+  createLink: function(resourceUrl) {
     // set the added link, this will avoid an extra call to the OpenURL API and fix the access url
     var a         = document.createElement('a');
-    a.href        = resourceUrl.replace('/original', '/pdf') + '?sid=' + sid;
+    a.href        = resourceUrl.replace('/original', '/pdf')
     a.target      = '_blank';
     a.alt         = 'ISTEX';
     a.name        = 'ISTEXLink';
@@ -450,7 +450,7 @@ ISTEXLinkInserter = {
       }
       parent
         .appendChild(
-          ISTEXLinkInserter.createLink(resourceUrl, sid)
+          ISTEXLinkInserter.createLink(resourceUrl)
         );
       return;
     }
@@ -467,7 +467,7 @@ ISTEXLinkInserter = {
         success : function(data) {
           parent
           && parent.appendChild(
-            ISTEXLinkInserter.createLink(data.resourceUrl, sid)
+            ISTEXLinkInserter.createLink(data.resourceUrl)
           );
         },
         error   : function(jqXHR, textStatus, errorThrown) {
