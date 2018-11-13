@@ -23,14 +23,16 @@ chrome.runtime.onConnect.addListener(function(port) {
   });
 });
 
-
 function isContentTypeAllowed (contentType) {
   var forbidenContentTypes = [
-    'application/xml',
-    'text/xml'
+    /application\/(\w+\+)?xml/,
+    /text\/xml/,
   ];
+  
+  return !forbidenContentTypes.find(function(regex) {
+    return contentType.match(regex);
+  });
 
-  return !~forbidenContentTypes.indexOf(contentType);
 }
 
 function isWhiteListed (url) {
