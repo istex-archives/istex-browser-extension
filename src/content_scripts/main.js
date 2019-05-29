@@ -44,7 +44,8 @@ const forbidenElements = ['applet',
                           'g',
                           'path',
                           'text',
-                          'rect'];
+                          'rect',
+			  'style'];
 
 config = {
   istexBaseURL: 'api.istex.fr/document/openurl',
