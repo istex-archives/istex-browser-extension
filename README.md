@@ -1,3 +1,7 @@
+**⚠⚠⚠ This extension is deprecated and no more maintained. Please consider replacing it by [Click & Read](https://clickandread.inist.fr/)⚠⚠⚠**
+
+---
+
 # istex-web-extension
 
 A basic add-on for identifying dynamically ISTEX resources in the browser pages.
